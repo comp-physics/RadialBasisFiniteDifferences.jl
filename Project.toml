@@ -1,0 +1,13 @@
+name = "RadialBasisFiniteDifferences"
+uuid = "b7528a51-23a9-4b4d-be8b-86e769992571"
+authors = ["Jesus Arias"]
+version = "0.1.0"
+
+[compat]
+julia = "1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
