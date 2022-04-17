@@ -1,0 +1,13 @@
+[deps]
+DynamicPolynomials = "7c1d4256-1411-5781-91ec-d7bc3513ac07"
+HNSW = "540f64fa-c57e-11e8-081c-41422cda4629"
+LazyGrids = "7031d0ef-c40d-4431-b2f8-61a8d2f650db"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Meshes = "eacbb407-ea5a-433e-ab97-5258b1ca43fa"
+MultivariateBases = "be282fd4-ad43-11e9-1d11-8bd9d7e43378"
+NearestNeighbors = "b8a86587-4115-5ab1-83bc-aa920d37bbce"
+PlotlyJS = "f0f68f2c-4968-5e81-91da-67840de0976a"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+StaticPolynomials = "62e018b1-6e46-5407-a5a7-97d4fbcae734"
+Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
