@@ -137,7 +137,7 @@ function generateOperator(X, Y, p, n, polydeg)
     ### Generate Sparse Matrices from Local Operator Matrices
     # From MATLAB Implementation
     idx_rows = repeat((1:length(Y))', n)'
-    idx_columns = Array{UInt32}(undef, length(Y), n) # Change to eltype of existing indices
+    idx_columns = Array{Int64}(undef, length(Y), n) # Change to eltype of existing indices
     for i = 1:length(Y)
         idx_columns[i,:] = idxs_x[idxs_y_x[i]][1]
     end

@@ -1,36 +1,37 @@
 #import DynamicPolynomials: @polyvar
 #import DynamicPolynomials: monomials
-import DynamicPolynomials: differentiate
-using StaticPolynomials
-using LinearAlgebra
+#import DynamicPolynomials: differentiate
+#using StaticPolynomials
+#using LinearAlgebra
 using StaticArrays
 #using NearestNeighbors
 using HNSW
 #using Symbolics
-using SparseArrays
+#using SparseArrays
 using DelimitedFiles
 #using Meshes
 using Plots
 #using MultivariateBases
 #including scaling 
-include("scalestencil.jl")
-include("interpolationmatrix.jl")
-include("polynomialBasis.jl")
-include("polynomialBlock.jl")
-include("distanceMatrix.jl")
+#include("scalestencil.jl")
+#include("interpolationmatrix.jl")
+#include("polynomialBasis.jl")
+#include("polynomialBlock.jl")
+#include("distanceMatrix.jl")
 #include("rhslinearoperator.jl")
-include("polylinearoperator.jl")
-include("generateOperator.jl")
+#include("polylinearoperator.jl")
+#include("generateOperator.jl")
 # RBF Operator
-include("rbfdx.jl")
-include("rbfdy.jl")
-include("rbfdxx.jl")
-include("rbfdyy.jl")
-include("rbfdxy.jl")
+#include("rbfdx.jl")
+#include("rbfdy.jl")
+#include("rbfdxx.jl")
+#include("rbfdyy.jl")
+#include("rbfdxy.jl")
+using RadialBasisFiniteDifferences
 
 ### Import Fitted Grid from Tominec
-x = readdlm("x_nodes_fitted.csv",',', Float64)
-y = readdlm("y_nodes_fitted.csv",',', Float64)
+x = readdlm("examples/x_nodes_fitted.csv",',', Float64)
+y = readdlm("examples/y_nodes_fitted.csv",',', Float64)
 X = copy(vec(reinterpret(SVector{2, Float64},x')))
 Y = copy(vec(reinterpret(SVector{2, Float64},y')))
 
@@ -81,7 +82,7 @@ n = 2 * binomial(polydeg+2,2) # Stencil size.
 
 ### Generate Global Operator Matrices from Local RBF Operator Matrices
 E, Dx, Dy, Dxx, Dyy, Dxy = generateOperator(X, Y, p, n, polydeg)
-spy(E)
+spy(E, size = (720, 1080))
 spy(Dx)
 spy(Dy)
 spy(Dxx)
