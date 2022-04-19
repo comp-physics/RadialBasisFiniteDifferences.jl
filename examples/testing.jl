@@ -10,7 +10,7 @@ using HNSW
 #using SparseArrays
 using DelimitedFiles
 #using Meshes
-using Plots
+#using Plots
 #using MultivariateBases
 #including scaling 
 #include("scalestencil.jl")
@@ -82,12 +82,12 @@ n = 2 * binomial(polydeg+2,2) # Stencil size.
 
 ### Generate Global Operator Matrices from Local RBF Operator Matrices
 E, Dx, Dy, Dxx, Dyy, Dxy = generateOperator(X, Y, p, n, polydeg)
-spy(E, size = (720, 1080))
-spy(Dx)
-spy(Dy)
-spy(Dxx)
-spy(Dyy)
-spy(Dxy)
+#spy(E, size = (720, 1280))
+#spy(Dx)
+#spy(Dy)
+#spy(Dxx)
+#spy(Dyy)
+#spy(Dxy)
 
 ### Lots of type warnings to fix later
 #@code_warntype generateOperator(X, Y, p, n, polydeg)
