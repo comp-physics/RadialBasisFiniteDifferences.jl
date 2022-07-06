@@ -12,6 +12,9 @@ using StaticArrays
 using HNSW
 using SparseArrays
 using DelimitedFiles
+using HDF5
+using Statistics
+using WriteVTK
 
 # Local Files 
 # Global Linear Operator Matrices
@@ -38,5 +41,18 @@ include("rbfdxy.jl")
 
 # Export Methods 
 export generateOperator
+
+# Local Files
+# Mesh Pre-processing 
+include("extractcoordinates.jl")
+export extractcoordinates
+include("extractelements.jl")
+export extractelements
+include("calculatenormal.jl")
+export calculatenormal
+include("genghostnodes.jl")
+export genghostnodes
+include("processmesh.jl")
+export processmesh
 
 end

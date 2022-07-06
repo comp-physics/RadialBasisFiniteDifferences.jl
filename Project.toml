@@ -6,11 +6,14 @@ version = "0.1.0"
 [deps]
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 DynamicPolynomials = "7c1d4256-1411-5781-91ec-d7bc3513ac07"
+HDF5 = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
 HNSW = "540f64fa-c57e-11e8-081c-41422cda4629"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 StaticPolynomials = "62e018b1-6e46-5407-a5a7-97d4fbcae734"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+WriteVTK = "64499a7a-5c06-52f2-abe2-ccb03c286192"
 
 [compat]
 julia = "1.4"
