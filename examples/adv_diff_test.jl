@@ -1,4 +1,4 @@
-### This test implements a Diffusion problem 
+### This test implements an Advection-Diffusion problem with Hyperviscosity 
 # This will also be the basis of the overall regression test
 #   for determining breaking changes in the RBF-FD library
 
@@ -88,6 +88,8 @@ u_x = 0.5
 u_y = 0.0
 CFL = 1
 delta_t = CFL * h_y / u_x
+k = 2
+Δᵏ = (Dxx + Dyy)^k
 
 # Precalculate ghost node weights
 Y_idx_bc_int = Array{eltype(Y_idx_bc)}(undef, length(markernames))
@@ -125,13 +127,13 @@ Y_idx_bc_int[4] = setdiff(1:length(Y), Y_idx_bc_g[4])
 uy_idx_offset = length(Y)
 function cons_sys(du, u, p, t)
     α, h_y, u_x, u_y, 
-    D_x, D_y, D_xx, D_yy, E,
+    D_x, D_y, D_xx, D_yy, E, Δᵏ,
     Y_idx_in, Y_idx_bc, Y_idx_bc_g, Y_idx_bc_int,
     w_bc, w_bc_g, w_bc_inv, w_bc_int = p
 
     # Interior
     du .= E' * (α * D_xx * u + α * D_yy * u - D_x * u_x * u - D_y * u_y * u) -
-            h_y^4 * (D_xx + D_yy) * (D_xx + D_yy) * u
+            h_y^(2*2) * Δᵏ * u
     
     # Right Boundary
     # ux - indeces
@@ -156,10 +158,10 @@ end
 M_mass = E' * E
 
 p = (α, h_y, u_x, u_y, 
-    Dx, Dy, Dxx, Dyy, E,
+    Dx, Dy, Dxx, Dyy, E, Δᵏ,
     Y_idx_in, Y_idx_bc, Y_idx_bc_g, Y_idx_bc_int,
     w_bc, w_bc_g, w_bc_inv, w_bc_int)
-tspan = [0.0, 7.5]
+tspan = [0.0, 5.0]
 f = ODEFunction(cons_sys)
 probl = ODEProblem(f, x₀, tspan, p)
 sol = solve(probl, Tsit5(), progress=true, progress_steps=1)
