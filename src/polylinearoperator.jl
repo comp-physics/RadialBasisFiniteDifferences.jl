@@ -34,12 +34,13 @@ r_Fxy = Matrix{Float64}(undef, m, n_p)
 
 ### Generate Poly righthand side
 for i = 1:m
-r_F[i,:] = StaticPolynomials.evaluate(F, X[i])
-r_Fx[i,:] = StaticPolynomials.evaluate(F_x, X[i])
-r_Fy[i,:] = StaticPolynomials.evaluate(F_y, X[i])
-r_Fxx[i,:] = StaticPolynomials.evaluate(F_xx, X[i])
-r_Fyy[i,:] = StaticPolynomials.evaluate(F_yy, X[i])
-r_Fxy[i,:] = StaticPolynomials.evaluate(F_xy, X[i])
+# Switch to Fixed Polynomials
+r_F[i,:] = FixedPolynomials.evaluate(F, X[i])
+r_Fx[i,:] = FixedPolynomials.evaluate(F_x, X[i])
+r_Fy[i,:] = FixedPolynomials.evaluate(F_y, X[i])
+r_Fxx[i,:] = FixedPolynomials.evaluate(F_xx, X[i])
+r_Fyy[i,:] = FixedPolynomials.evaluate(F_yy, X[i])
+r_Fxy[i,:] = FixedPolynomials.evaluate(F_xy, X[i])
 end
 
 ### Concatinate RHSs 

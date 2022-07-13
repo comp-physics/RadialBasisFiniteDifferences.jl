@@ -24,8 +24,9 @@ P = zeros(Float64, m, n)
 
 # Evaluate Polynomial System at Data Point
 for i=1:m
-    #P[i, :] = StaticPolynomials.evaluate(F, collect(X_shift[i]))
-    P[i, :] = StaticPolynomials.evaluate(F, X[i])
+    #P[i, :] = StaticPolynomials.evaluate(F, X[i])
+    # Switch to Fixed Polynomials
+    P[i, :] = FixedPolynomials.evaluate(F, X[i])
 end
 
 return P
