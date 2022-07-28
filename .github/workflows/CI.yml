@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+      - hyperviscosity
     tags: '*'
   pull_request:
 concurrency:
