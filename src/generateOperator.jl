@@ -2,7 +2,11 @@ function generateOperator(X, Y, p, n, polydeg)
     # Generate Global Operator Matrices
     # Can also generate multiple methods depending on the element type of X 
     # Can allow for providing dimensionality 
-    
+
+    # RBF Interpolation system
+    # Generate RBFs 
+    rbf, rbf_x, rbf_y, rbf_xx, rbf_yy, rbf_xy = rbfbasis(p)
+
     # Polynomial Interpolation System
     # Generate Polynomial Basis Functions
     F, F_x, F_y, F_xx, F_yy, F_xy = polynomialBasis(polydeg, 2)
@@ -34,7 +38,7 @@ function generateOperator(X, Y, p, n, polydeg)
     
         ### Generate Interpolation Matrix
         # Pre-invert
-        M, M_inv = interpolationmatrix(X_shift, F)
+        M, M_inv = interpolationmatrix(X_shift, rbf, F)
         M_int[i, 1] = M
         M_int[i, 2] = M_inv
     
