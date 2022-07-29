@@ -98,31 +98,34 @@ function generateOperator(X, Y, p, n, polydeg)
         Yscaled = [Yscaled[1]*scale_x, Yscaled[2]*scale_y]
     
         # Stencil distance matrices. Center point is in the origin (0)
-        dx_stencil = Vector(undef, length(idx))
-        dy_stencil = Vector(undef, length(idx))
+        stencil_coord = Array{SVector{2},1}(undef, length(idx))
         for i = 1:length(idx)
-            dx_stencil[i] = Yscaled[1] - Xscaled[i][1]
-            dy_stencil[i] = Yscaled[2] - Xscaled[i][2]
-            if dx_stencil[i] == 0 dx_stencil[i] = eps() end
-            if dy_stencil[i] == 0 dy_stencil[i] = eps() end
+            dx_stencil = Yscaled[1] - Xscaled[i][1]
+            dy_stencil = Yscaled[2] - Xscaled[i][2]
+            if dx_stencil == 0 dx_stencil = eps() end
+            if dy_stencil == 0 dy_stencil = eps() end
+            stencil_coord[i] = [dx_stencil, dy_stencil]
         end 
-    
+
         # Compute distance matrix
         # Here the distance matrix is actually not scaled
-        # Later port RBF basis to function
-        r_stencil = sqrt.(dx_stencil.^2 .+ dy_stencil.^2)
-    
         # Oth derivative 
-        b = r_stencil.^p
+        #b = r_stencil.^p
+        b = rbf.(stencil_coord)
     
         # 1st derivatives 
-        bx = p .* dx_stencil .* r_stencil.^(p-2)
-        by = p .* dy_stencil .* r_stencil.^(p-2)
+        #bx = p .* dx_stencil .* r_stencil.^(p-2)
+        bx = rbf_x.(stencil_coord)
+        #by = p .* dy_stencil .* r_stencil.^(p-2)
+        by = rbf_y.(stencil_coord)
     
         # 2nd derivatives 
-        bxx = p .* r_stencil.^(p-2) + p * (p-2) .* r_stencil.^(p-4) .* dx_stencil.^2
-        byy = p .* r_stencil.^(p-2) + p * (p-2) .* r_stencil.^(p-4) .* dy_stencil.^2
-        bxy = p * (p-2) * r_stencil.^(p-4) .* dx_stencil .* dx_stencil
+        #bxx = p .* r_stencil.^(p-2) + p * (p-2) .* r_stencil.^(p-4) .* dx_stencil.^2
+        bxx = rbf_xx.(stencil_coord)
+        #byy = p .* r_stencil.^(p-2) + p * (p-2) .* r_stencil.^(p-4) .* dy_stencil.^2
+        byy = rbf_yy.(stencil_coord)
+        #bxy = p * (p-2) * r_stencil.^(p-4) .* dx_stencil .* dx_stencil
+        bxy = rbf_xy.(stencil_coord)
     
         # Compute all stencil at once
         RHS = [bx by bxx byy bxy b; cx[k,:] cy[k,:] cxx[k,:] cyy[k,:] cxy[k,:] c[k,:]]
