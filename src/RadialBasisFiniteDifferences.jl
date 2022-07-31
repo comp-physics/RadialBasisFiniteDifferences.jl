@@ -43,6 +43,14 @@ export polylinearoperator
 #include("rbfdyy.jl")
 #include("rbfdxy.jl")
 
+# Hyperviscosity Methods 
+include("rbfbasis_k.jl")
+export rbfbasis_k
+include("polynomialbasis_k.jl")
+export polynomialbasis_k
+include("hyperviscosity_operator.jl")
+export hyperviscosity_operator
+
 # Main Method
 include("generateOperator.jl")
 export generateOperator
