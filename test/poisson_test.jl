@@ -15,20 +15,20 @@ using LinearAlgebra
 using RadialBasisFiniteDifferences
 
 # Import Fitted Grid from Tominec
-x = readdlm("data/x_nodes_fitted.csv",',', Float64)
-y = readdlm("data/y_nodes_fitted.csv",',', Float64)
-X = copy(vec(reinterpret(SVector{2, Float64},x')))
-Y = copy(vec(reinterpret(SVector{2, Float64},y')))
+x = readdlm("data/x_nodes_fitted.csv", ',', Float64)
+y = readdlm("data/y_nodes_fitted.csv", ',', Float64)
+X = copy(vec(reinterpret(SVector{2,Float64}, x')))
+Y = copy(vec(reinterpret(SVector{2,Float64}, y')))
 N = length(X)
 M = length(Y)
 
 # Import interior indices, boundary indices, 
 #   and corresponding normals
-Y_idx_in = vec(readdlm("data/Y_idx_in.csv",',', Int64))
-Y_idx_dirichlet = vec(readdlm("data/Y_idx_dirichlet.csv",',', Int64))
-Y_idx_neumann = vec(readdlm("data/Y_idx_neumann.csv",',', Int64))
-x_normals = readdlm("data/x_normals.csv",',', Float64)
-y_normals = readdlm("data/y_normals.csv",',', Float64)
+Y_idx_in = vec(readdlm("data/Y_idx_in.csv", ',', Int64))
+Y_idx_dirichlet = vec(readdlm("data/Y_idx_dirichlet.csv", ',', Int64))
+Y_idx_neumann = vec(readdlm("data/Y_idx_neumann.csv", ',', Int64))
+x_normals = readdlm("data/x_normals.csv", ',', Float64)
+y_normals = readdlm("data/y_normals.csv", ',', Float64)
 
 ### Overwrite Y closest to X to X value
 # Generate KNN Tree Using HNSW 
@@ -37,9 +37,9 @@ hnsw_y = HierarchicalNSW(Y)
 add_to_graph!(hnsw_y)
 # Find single nearest neighbor for each Y point
 idxs_y, dists_y = knn_search(hnsw_y, X, 1)
-idxs_y = [convert.(Int,idxs_y[x]) for x=1:length(idxs_y)]
+idxs_y = [convert.(Int, idxs_y[x]) for x in 1:length(idxs_y)]
 # Proceed with overwrite
-for i = 1:length(X)
+for i in 1:length(X)
     Y[idxs_y[i][1]] = X[i]
 end
 
@@ -49,38 +49,44 @@ end
 #bf = Basis.basisF('PHS', '2d'); % Choose basis functions. To be implemented
 p = 3; # PHS power (r^p).
 polydeg = 3; # Augmented polynomial degree.
-n = 2 * binomial(polydeg+2,2) # Stencil size.
+n = 2 * binomial(polydeg + 2, 2) # Stencil size.
 
 ### Generate Global Operator Matrices from Local RBF Operator Matrices
-E, Dx, Dy, Dxx, Dyy, Dxy = generateOperator(X, Y, p, n, polydeg)
+E, Dx, Dy, Dxx, Dyy, Dxy = generate_operator(X, Y, p, n, polydeg)
 
 ### Construct global discretized PDE system
 
 # Decide for an exact solution.
-u_exact(x,y) = sin(2 * pi * x * y)
+u_exact(x, y) = sin(2 * pi * x * y)
 
 # The corresponding right-hand-sides.
-f2(x,y) = x^2 * pi^2 * sin(x * y * pi * 2.0) * (-4.0) - 
-            y^2 * pi^2 * sin(x * y * pi * 2.0) * 4.0 # Interior RHS.
-f1(n1,n2,x,y) = n2 * x * pi * cos(x * y * pi * 2.0) * 2.0 + 
-                n1 * y * pi * cos(x * y * pi * 2.0) * 2.0 # Neumann RHS.
-f0(x,y) = u_exact(x,y) # Dirichlet RHS.
+function f2(x, y)
+    return x^2 * pi^2 * sin(x * y * pi * 2.0) * (-4.0) -
+           y^2 * pi^2 * sin(x * y * pi * 2.0) * 4.0 # Interior RHS.
+end # Interior RHS.
+function f1(n1, n2, x, y)
+    return n2 * x * pi * cos(x * y * pi * 2.0) * 2.0 +
+           n1 * y * pi * cos(x * y * pi * 2.0) * 2.0 # Neumann RHS.
+end # Neumann RHS.
+f0(x, y) = u_exact(x, y) # Dirichlet RHS.
 
 # Assemble the PDE operator.
 D = zeros(Float64, M, N)
-D[Y_idx_in,:] .= Dxx[Y_idx_in,:] + Dyy[Y_idx_in,:]
-D[Y_idx_neumann,:] .= x_normals[:,3] .* Dx[Y_idx_neumann,:] + y_normals[:,3] .* Dy[Y_idx_neumann,:]
-D[Y_idx_dirichlet,:] .= E[Y_idx_dirichlet,:]
+D[Y_idx_in, :] .= Dxx[Y_idx_in, :] + Dyy[Y_idx_in, :]
+D[Y_idx_neumann, :] .= x_normals[:, 3] .* Dx[Y_idx_neumann, :] +
+                       y_normals[:, 3] .* Dy[Y_idx_neumann, :]
+D[Y_idx_dirichlet, :] .= E[Y_idx_dirichlet, :]
 
 # Assemble the RHS.
 f = zeros(M)
-for i = 1:length(Y_idx_in)
-f[Y_idx_in[i]] = f2(Y[Y_idx_in[i]][1], Y[Y_idx_in[i]][2]) # Interior.
+for i in 1:length(Y_idx_in)
+    f[Y_idx_in[i]] = f2(Y[Y_idx_in[i]][1], Y[Y_idx_in[i]][2]) # Interior.
 end
-for i = 1:length(Y_idx_neumann)
-    f[Y_idx_neumann[i]] = f1(x_normals[i,3], y_normals[i,3], Y[Y_idx_neumann[i]][1], Y[Y_idx_neumann[i]][2]) # Neumann.
+for i in 1:length(Y_idx_neumann)
+    f[Y_idx_neumann[i]] = f1(x_normals[i, 3], y_normals[i, 3], Y[Y_idx_neumann[i]][1],
+                             Y[Y_idx_neumann[i]][2]) # Neumann.
 end
-for i = 1:length(Y_idx_dirichlet)
+for i in 1:length(Y_idx_dirichlet)
     f[Y_idx_dirichlet[i]] = f0(Y[Y_idx_dirichlet[i]][1], Y[Y_idx_dirichlet[i]][2]) # Dirichlet.
 end
 
@@ -91,7 +97,7 @@ hnsw_x = HierarchicalNSW(X)
 add_to_graph!(hnsw_x)
 # Find nearest neighbor for each X point
 idxs_x, dists_x = knn_search(hnsw_x, X, 2)
-idxs_x = [convert.(Int,idxs_x[x]) for x=1:length(idxs_x)]
+idxs_x = [convert.(Int, idxs_x[x]) for x in 1:length(idxs_x)]
 # Mean distance
 h = mean(dists_x)[2]
 
@@ -99,26 +105,26 @@ M0 = length(Y_idx_dirichlet)
 M1 = length(Y_idx_neumann)
 M2 = length(Y_idx_in)
 
-D[Y_idx_in,:] .= 1/sqrt(M2) * D[Y_idx_in,:]
-D[Y_idx_neumann,:] .= 1/sqrt(M1) * D[Y_idx_neumann,:]
-D[Y_idx_dirichlet,:] .= 1/h * 1/sqrt(M0) * D[Y_idx_dirichlet,:]
+D[Y_idx_in, :] .= 1 / sqrt(M2) * D[Y_idx_in, :]
+D[Y_idx_neumann, :] .= 1 / sqrt(M1) * D[Y_idx_neumann, :]
+D[Y_idx_dirichlet, :] .= 1 / h * 1 / sqrt(M0) * D[Y_idx_dirichlet, :]
 
-f[Y_idx_in] .= 1/sqrt(M2) * f[Y_idx_in]
-f[Y_idx_neumann] .= 1/sqrt(M1) * f[Y_idx_neumann]
-f[Y_idx_dirichlet] .= 1/h * 1/sqrt(M0) * f[Y_idx_dirichlet]
+f[Y_idx_in] .= 1 / sqrt(M2) * f[Y_idx_in]
+f[Y_idx_neumann] .= 1 / sqrt(M1) * f[Y_idx_neumann]
+f[Y_idx_dirichlet] .= 1 / h * 1 / sqrt(M0) * f[Y_idx_dirichlet]
 
 # Convert to Sparse
 D = sparse(D)
 
 # Solve.
-u_Y = E*(D\f)
+u_Y = E * (D \ f)
 
 # Compute error.
 # This metric will be used to evaluate regression test
 #   pass/fail condition
 err = zeros(M)
-err = norm(u_Y - u_exact.([Y[x][1] for x in 1:length(Y)],[Y[x][2] for x in 1:length(Y)])) / 
-        norm(u_exact.([Y[x][1] for x in 1:length(Y)],[Y[x][2] for x in 1:length(Y)]));
+err = norm(u_Y - u_exact.([Y[x][1] for x in 1:length(Y)], [Y[x][2] for x in 1:length(Y)])) /
+      norm(u_exact.([Y[x][1] for x in 1:length(Y)], [Y[x][2] for x in 1:length(Y)]));
 
 #@assert err < 0.0027
 #display(err)

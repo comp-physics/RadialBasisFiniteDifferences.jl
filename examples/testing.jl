@@ -30,10 +30,10 @@ using DelimitedFiles
 using RadialBasisFiniteDifferences
 
 ### Import Fitted Grid from Tominec
-x = readdlm("examples/x_nodes_fitted.csv",',', Float64)
-y = readdlm("examples/y_nodes_fitted.csv",',', Float64)
-X = copy(vec(reinterpret(SVector{2, Float64},x')))
-Y = copy(vec(reinterpret(SVector{2, Float64},y')))
+x = readdlm("examples/x_nodes_fitted.csv", ',', Float64)
+y = readdlm("examples/y_nodes_fitted.csv", ',', Float64)
+X = copy(vec(reinterpret(SVector{2,Float64}, x')))
+Y = copy(vec(reinterpret(SVector{2,Float64}, y')))
 
 ### Decide the proper schema for "Mesh" Definition
 ### Options include using Meshes.jl, FiniteMeshes.jl, HDF5.jl, etc.
@@ -67,7 +67,7 @@ add_to_graph!(hnsw_y)
 # Find single nearest neighbor for each Y point
 #idxs_y_x, dists_y_x = knn_search(hnsw_x, collect(Y[1]), 1)
 idxs_y, dists_y = knn_search(hnsw_y, X, 1)
-idxs_y = [convert.(Int,idxs_y[x]) for x=1:length(idxs_y)]
+idxs_y = [convert.(Int, idxs_y[x]) for x = 1:length(idxs_y)]
 #Y[idxs_y] = X
 # Overwrite Y closest to X to X value
 for i = 1:length(X)
@@ -78,7 +78,7 @@ end
 #bf = Basis.basisF('PHS', '2d'); % Choose basis functions. To be implemented
 p = 3; # PHS power (r^p).
 polydeg = 3; # Augmented polynomial degree.
-n = 2 * binomial(polydeg+2,2) # Stencil size.
+n = 2 * binomial(polydeg + 2, 2) # Stencil size.
 
 ### Generate Global Operator Matrices from Local RBF Operator Matrices
 E, Dx, Dy, Dxx, Dyy, Dxy = generateOperator(X, Y, p, n, polydeg)
