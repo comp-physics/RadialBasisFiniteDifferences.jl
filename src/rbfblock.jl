@@ -11,8 +11,8 @@ function rbfblock(rbf_expr, X)
     D = Array{SVector,2}(undef, (m, m))
 
     # Generate Distance Matrix
-    for j = 1:m
-        for i = 1:m
+    for j in 1:m
+        for i in 1:m
             D[i, j] = X[i] - X[j]
         end
     end
@@ -20,5 +20,4 @@ function rbfblock(rbf_expr, X)
     Φ = rbf_expr.(D)
 
     return Φ
-
 end

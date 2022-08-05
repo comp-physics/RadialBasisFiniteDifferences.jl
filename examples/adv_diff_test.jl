@@ -23,14 +23,14 @@ using WriteVTK
 using HDF5
 # Import X field
 meshname = "rect_0_05.cgns"
-markernames = ["left","right","top","bottom"]
-X, x_point_mat, X_idx_in, X_idx_bc, X_idx_bc_g, 
-    cells, bc_normals, bc_tangents = processmesh(meshname, markernames)
+markernames = ["left", "right", "top", "bottom"]
+X, x_point_mat, X_idx_in, X_idx_bc, X_idx_bc_g,
+cells, bc_normals, bc_tangents = processmesh(meshname, markernames)
 N = length(X)
 
 # Import Y field
-Y, y_point_mat, Y_idx_in, Y_idx_bc, Y_idx_bc_g, 
-    cells, bc_normals, bc_tangents = processmesh(meshname, markernames)
+Y, y_point_mat, Y_idx_in, Y_idx_bc, Y_idx_bc_g,
+cells, bc_normals, bc_tangents = processmesh(meshname, markernames)
 
 ### Overwrite Y closest to X to X value
 # Generate KNN Tree Using HNSW 
@@ -39,7 +39,7 @@ hnsw_y = HierarchicalNSW(Y)
 add_to_graph!(hnsw_y)
 # Find single nearest neighbor for each Y point
 idxs_y, dists_y = knn_search(hnsw_y, X, 1)
-idxs_y = [convert.(Int,idxs_y[x]) for x=1:length(idxs_y)]
+idxs_y = [convert.(Int, idxs_y[x]) for x = 1:length(idxs_y)]
 # Proceed with overwrite
 for i = 1:length(X)
     Y[idxs_y[i][1]] = X[i]
@@ -51,7 +51,7 @@ end
 #bf = Basis.basisF('PHS', '2d'); % Choose basis functions. To be implemented
 rbfdeg = 5; # PHS power (r^p).
 polydeg = 5; # Augmented polynomial degree.
-n = 2 * binomial(polydeg+2,2) # Stencil size.
+n = 2 * binomial(polydeg + 2, 2) # Stencil size.
 
 ### Generate Global Operator Matrices from Local RBF Operator Matrices
 E, Dx, Dy, Dxx, Dyy, Dxy = generateOperator(X, Y, rbfdeg, n, polydeg)
@@ -59,7 +59,7 @@ E, Dx, Dy, Dxx, Dyy, Dxy = generateOperator(X, Y, rbfdeg, n, polydeg)
 ### Construct global discretized PDE system
 # Importing syntax from Tominec then porting to Julia
 x₀ = zeros(length(X))
-f_init(x,y) = ((x-0.5)^2 + (y-0.5)^2 <= (0.2)^2) ? 10 : 1
+f_init(x, y) = ((x - 0.5)^2 + (y - 0.5)^2 <= (0.2)^2) ? 10 : 1
 for i = 1:length(X)
     x₀[i] = f_init(X[i][1], X[i][2]) # Initial Condition
 end
@@ -77,19 +77,19 @@ hnsw_y = HierarchicalNSW(Y)
 add_to_graph!(hnsw_y)
 # Find nearest neighbor for each X point
 idxs_y, dists_y = knn_search(hnsw_y, Y, 2)
-idxs_y = [convert.(Int,idxs_y[x]) for x=1:length(idxs_y)]
+idxs_y = [convert.(Int, idxs_y[x]) for x = 1:length(idxs_y)]
 # Mean distance
 h_y = mean(dists_y)[2]
 
 # Adding constant advection to system
-α = 0.0 # Diffusion Coefficient 
+α = 0.001 # Diffusion Coefficient 
 u_x = 0.5
 u_y = 0.0
 CFL = 1
 delta_t = CFL * h_y / u_x
 ### Generate Hyperviscosity Operator
 k = 2
-Dxk, Dyk = hyperviscosity_operator(2*k, X, Y, rbfdeg, n, polydeg)
+Dxk, Dyk = hyperviscosity_operator(2 * k, X, Y, rbfdeg, n, polydeg)
 #Δᵏ = (Dxx + Dyy)^k
 Δᵏ = (Dxk + Dyk)
 # Compare to Dxx
@@ -102,8 +102,8 @@ w_bc = Array{typeof(Dx)}(undef, length(markernames))
 w_bc_g = Array{typeof(Dx)}(undef, length(markernames))
 w_bc_inv = deepcopy(w_bc)
 w_bc_int = deepcopy(w_bc)
-w_normal_x = [[bc_normals[x][y][1] for y=1:length(bc_normals[x])] for x=1:length(bc_normals)]
-w_normal_y = [[bc_normals[x][y][2] for y=1:length(bc_normals[x])] for x=1:length(bc_normals)]
+w_normal_x = [[bc_normals[x][y][1] for y = 1:length(bc_normals[x])] for x = 1:length(bc_normals)]
+w_normal_y = [[bc_normals[x][y][2] for y = 1:length(bc_normals[x])] for x = 1:length(bc_normals)]
 # Inlet
 #w_bc[1] = Dx[Y_idx_bc[1], Y_idx_bc[1]]
 w_bc_g[1] = Dx[Y_idx_bc[1], Y_idx_bc_g[1]]
@@ -131,7 +131,7 @@ Y_idx_bc_int[4] = setdiff(1:length(Y), Y_idx_bc_g[4])
 
 uy_idx_offset = length(Y)
 function cons_sys(du, u, p, t)
-    α, h_y, u_x, u_y, 
+    α, h_y, u_x, u_y,
     D_x, D_y, D_xx, D_yy, E, Δᵏ, k,
     Y_idx_in, Y_idx_bc, Y_idx_bc_g, Y_idx_bc_int,
     w_bc, w_bc_g, w_bc_inv, w_bc_int = p
@@ -139,7 +139,7 @@ function cons_sys(du, u, p, t)
     # Interior
     # du .= E' * (α * D_xx * u + α * D_yy * u - D_x * u_x * u - D_y * u_y * u) -
     #         1.0 * h_y^(2*k) * Δᵏ * u
-    
+
     # Right Boundary
     # ux - indeces
     u[Y_idx_bc_g[2]] .= -w_bc_inv[2] * (w_bc_int[2] * u[Y_idx_bc_int[2]])
@@ -148,49 +148,50 @@ function cons_sys(du, u, p, t)
     # ux - indeces
     u[Y_idx_bc[1]] .= 1.0
     u[Y_idx_bc_g[1]] .= 1.0
-    
+
     # Top Boundary
     # ux - indeces
     u[Y_idx_bc_g[3]] .= -w_bc_inv[3] * (w_bc_int[3] * u[Y_idx_bc_int[3]])
-    
+
     # Bottom Boundary
     # ux - indeces
     u[Y_idx_bc_g[4]] .= -w_bc_inv[4] * (w_bc_int[4] * u[Y_idx_bc_int[4]])
 
     # Interior
     du .= E' * (α * D_xx * u + α * D_yy * u - D_x * u_x * u - D_y * u_y * u) -
-            1.0 * h_y^(2*k) * Δᵏ * u
+          1.0 * h_y^(2 * k) * Δᵏ * u
     # Zero out ghosts
     du[Y_idx_bc[1]] .= 0.0
     du[Y_idx_bc_g[1]] .= 0.0
     du[Y_idx_bc_g[2]] .= 0.0
     du[Y_idx_bc_g[3]] .= 0.0
     du[Y_idx_bc_g[4]] .= 0.0
-    
+
 end
 
 M_mass = E' * E
 
-p = (α, h_y, u_x, u_y, 
+p = (α, h_y, u_x, u_y,
     Dx, Dy, Dxx, Dyy, E, Δᵏ, k,
     Y_idx_in, Y_idx_bc, Y_idx_bc_g, Y_idx_bc_int,
     w_bc, w_bc_g, w_bc_inv, w_bc_int)
 tspan = [0.0, 2.5]
 f = ODEFunction(cons_sys)
 probl = ODEProblem(f, x₀, tspan, p)
-sol = solve(probl, Tsit5(), progress=true, progress_steps=1)
+sol = solve(probl, SSPRK43(), progress=true, progress_steps=1)
 
 x_final = sol(tspan[2])
+x_final = sol(1.0)
 using GLMakie
 # Plot including Ghost Nodes
-Makie.scatter(Tuple.(X), color = x_final, axis = (aspect = DataAspect(),))
+Makie.scatter(Tuple.(X), color=x_final, axis=(aspect=DataAspect(),))
 # Plot Removing Ghost Nodes
 idx_real = 1:minimum(minimum(Y_idx_bc_g))-1
-Makie.scatter(Tuple.(X[idx_real]), color = x_final[idx_real], axis = (aspect = DataAspect(),))
+Makie.scatter(Tuple.(X[idx_real]), color=x_final[idx_real], axis=(aspect=DataAspect(),))
 
 # Testing BC Operators
 using Plots
-u = sol(0.1)
+u = sol(1.0)
 u_right = -w_bc_inv[2] * (w_bc_int[2] * u[Y_idx_bc_int[2]])
 Plots.plot(u_right)
 u_bottom = -w_bc_inv[4] * (w_bc_int[4] * u[Y_idx_bc_int[4]])

@@ -7,7 +7,7 @@ function rbfbasis_k(rbfdeg, k)
 
     # Generate Polyharmonic Spline RBF
     rbf = sqrt(x^2 + y^2)^p
-    rbf_expr = build_function(rbf, [x, y], expression=Val{false})
+    rbf_expr = build_function(rbf, [x, y]; expression=Val{false})
 
     # Generate Derivatives
     # Differential Operators
@@ -17,9 +17,8 @@ function rbfbasis_k(rbfdeg, k)
     rbf_xk = simplify(expand_derivatives(Dxk(rbf)))
     rbf_yk = simplify(expand_derivatives(Dyk(rbf)))
     # Create functions
-    rbf_xk_expr = build_function(rbf_xk, [x, y], expression=Val{false})
-    rbf_yk_expr = build_function(rbf_yk, [x, y], expression=Val{false})
+    rbf_xk_expr = build_function(rbf_xk, [x, y]; expression=Val{false})
+    rbf_yk_expr = build_function(rbf_yk, [x, y]; expression=Val{false})
 
     return rbf_expr, rbf_xk_expr, rbf_yk_expr
-
 end

@@ -33,7 +33,7 @@ function polylinearoperator(X, F, F_x, F_y, F_xx, F_yy, F_xy)
     #r_xy_eval = rbfdxy(p, X)
 
     ### Generate Poly righthand side
-    for i = 1:m
+    for i in 1:m
         # Evaluate with Fixed Polynomials
         r_F[i, :] = FixedPolynomials.evaluate(F, X[i])
         r_Fx[i, :] = FixedPolynomials.evaluate(F_x, X[i])
@@ -47,7 +47,6 @@ function polylinearoperator(X, F, F_x, F_y, F_xx, F_yy, F_xy)
     #polyRHS = [r_F r_Fx r_Fy r_Fxx r_Fyy r_Fxy]
 
     return r_F, r_Fx, r_Fy, r_Fxx, r_Fyy, r_Fxy
-
 end
 
 function polylinearoperator(X, F_xk, F_yk)
@@ -61,12 +60,11 @@ function polylinearoperator(X, F_xk, F_yk)
     r_Fyk = Matrix{Float64}(undef, m, n_p)
 
     ### Generate Poly righthand side
-    for i = 1:m
+    for i in 1:m
         # Evaluate with Fixed Polynomials
         r_Fxk[i, :] = FixedPolynomials.evaluate(F_xk, X[i])
         r_Fyk[i, :] = FixedPolynomials.evaluate(F_yk, X[i])
     end
 
     return r_Fxk, r_Fyk
-
 end

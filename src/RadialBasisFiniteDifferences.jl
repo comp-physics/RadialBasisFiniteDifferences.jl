@@ -52,8 +52,8 @@ include("hyperviscosity_operator.jl")
 export hyperviscosity_operator
 
 # Main Method
-include("generateOperator.jl")
-export generateOperator
+include("generate_operator.jl")
+export generate_operator
 
 # Local Files
 # Mesh Pre-processing 
