@@ -1,4 +1,4 @@
-function polynomialBasis(polydeg, DIM=2)
+function polynomialbasis(polydeg, DIM=2)
 
     # Polynomial Interpolation System
     #@polyvar z y x

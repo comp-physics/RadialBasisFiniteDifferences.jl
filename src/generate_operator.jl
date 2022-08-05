@@ -9,7 +9,7 @@ function generate_operator(X, Y, p, n, polydeg)
 
     # Polynomial Interpolation System
     # Generate Polynomial Basis Functions
-    F, F_x, F_y, F_xx, F_yy, F_xy = polynomialBasis(polydeg, 2)
+    F, F_x, F_y, F_xx, F_yy, F_xy = polynomialbasis(polydeg, 2)
 
     # Generate KNN Tree Using HNSW 
     #Intialize HNSW struct

@@ -1,4 +1,4 @@
-function polynomialBlock(F, X)
+function polynomialblock(F, X)
     # Generate the polynomial basis block for one
     #  interpolation point
     #

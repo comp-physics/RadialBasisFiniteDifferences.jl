@@ -1,6 +1,6 @@
 function interpolationmatrix(X, rbf_expr, F)
     ### Generate Interpolation Matrix
-    P_block = polynomialBlock(F, X)
+    P_block = polynomialblock(F, X)
     Φ = rbfblock(rbf_expr, X)
     A = hvcat((2, 2), Φ, P_block, P_block', zeros(size(P_block)[2], size(P_block)[2]))
 

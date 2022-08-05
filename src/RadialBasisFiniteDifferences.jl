@@ -23,10 +23,10 @@ include("scalestencil.jl")
 export scalestencil
 include("interpolationmatrix.jl")
 export interpolationmatrix
-include("polynomialBasis.jl")
-export polynomialBasis
-include("polynomialBlock.jl")
-export polynomialBlock
+include("polynomialbasis.jl")
+export polynomialbasis
+include("polynomialblock.jl")
+export polynomialblock
 include("rbfbasis.jl")
 export rbfbasis
 include("rbfblock.jl")
