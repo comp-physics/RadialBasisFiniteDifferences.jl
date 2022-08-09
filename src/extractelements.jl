@@ -14,7 +14,7 @@ function extractelements(fid, X, field::String, conn::Integer)
     #element_center = []
 
     element_center = [mean(X[element_connectivity[x]])
-                      for x in 1:length(element_connectivity)]
+                      for x in eachindex(element_connectivity)]
 
     return element_center, element_connectivity
 end

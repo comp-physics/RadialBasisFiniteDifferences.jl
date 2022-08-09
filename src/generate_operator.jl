@@ -19,10 +19,10 @@ function generate_operator(X, Y, p, n, polydeg)
     add_to_graph!(hnsw_x)
     # Find k (approximate) nearest neighbors for each of the queries
     idxs_x, dists_x = knn_search(hnsw_x, X, n)
-    idxs_x = [convert.(Int, idxs_x[x]) for x in eachindex(idxs_x)] # Convert to readable
+    #idxs_x = [convert.(Int, idxs_x[x]) for x in eachindex(idxs_x)] # Convert to readable
     # Find single nearest neighbor for each Y point
     idxs_y_x, dists_y_x = knn_search(hnsw_x, Y, 1)
-    idxs_y_x = [convert.(Int, idxs_y_x[x]) for x in eachindex(idxs_y_x)] # Convert to readable
+    #idxs_y_x = [convert.(Int, idxs_y_x[x]) for x in eachindex(idxs_y_x)] # Convert to readable
 
     ### Storing matrices and scale factors
     m = lastindex(X)
@@ -147,7 +147,7 @@ function generate_operator(X, Y, p, n, polydeg)
     ### Generate Sparse Matrices from Local Operator Matrices
     # From MATLAB Implementation
     idx_rows = repeat((eachindex(Y))', n)'
-    idx_columns = Array{Int64}(undef, lastindex(Y), n) # Change to eltype of existing indices
+    idx_columns = Array{eltype(idxs_x[1])}(undef, lastindex(Y), n) # Change to eltype of existing indices
     for i in eachindex(Y)
         idx_columns[i, :] = idxs_x[idxs_y_x[i]][1]
     end

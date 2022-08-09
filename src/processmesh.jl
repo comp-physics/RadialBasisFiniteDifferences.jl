@@ -12,7 +12,7 @@ function processmesh(meshname::String, markernames)
     #markernames = ["inlet","outlet","top","bottom","wall"]
 
     fid = h5open(meshname, "r")
-    marker_regions = length(markernames)
+    marker_regions = lastindex(markernames)
 
     # Import Data
     x_field = "Base/dom-1/GridCoordinates/CoordinateX"
@@ -28,7 +28,7 @@ function processmesh(meshname::String, markernames)
 
     # Generate mesh for VTK export
     tri_cells = [MeshCell(VTKCellTypes.VTK_TRIANGLE, tri_elements[x])
-                 for x in 1:length(tri_elements)]
+                 for x in eachindex(tri_elements)]
 
     # Generate KNN Tree Using HNSW 
     hnsw_y = HierarchicalNSW(Y_points)
@@ -36,7 +36,7 @@ function processmesh(meshname::String, markernames)
     add_to_graph!(hnsw_y)
     # Find nearest neighbor for each X point
     idxs_y, dists_y = knn_search(hnsw_y, Y_points, 2)
-    idxs_y = [convert.(Int, idxs_y[x]) for x in 1:length(idxs_y)]
+    idxs_y = [convert.(Int, idxs_y[x]) for x in eachindex(idxs_y)]
     # Mean distance
     h_y = mean(dists_y)[2]
 
@@ -65,7 +65,7 @@ function processmesh(meshname::String, markernames)
     #cells = Array{eltype(tri_cells)}(undef, Y_idx_bc_max)
     #cells[Y_idx_in] = tri_cells
     #cells = tri_cells
-    bc_field = []
+    bc_field = String[]
     bc_lines = Array{Vector{eltype(tri_faces)}}(undef, marker_regions)
     bc_normals = Array{Vector{eltype(tri_faces)}}(undef, marker_regions)
     bc_tangents = Array{Vector{eltype(tri_faces)}}(undef, marker_regions)
@@ -106,8 +106,8 @@ function processmesh(meshname::String, markernames)
 
         # Generate BC cells
         bc_cell = [MeshCell(VTKCellTypes.VTK_LINE, bc_elements[x])
-                   for x in 1:length(bc_elements)]
-        #append!(cells, [MeshCell(VTKCellTypes.VTK_LINE, bc_elements[x]) for x = 1:length(bc_elements)])
+                   for x in eachindex(bc_elements)]
+        #append!(cells, [MeshCell(VTKCellTypes.VTK_LINE, bc_elements[x]) for x = eachindex(bc_elements)])
 
         # Add to Y
         Y[Y_idx_bc[i]] = bc_lines[i]
@@ -139,7 +139,7 @@ function processmesh(meshname::String, markernames)
     bc_tangents = normal_orient .* bc_tangents
 
     # Generate ghost nodes 
-    Y_idx_bc_g = [Y_idx_bc[x] .+ Y_idx_bc_max .- int_range[2] for x in 1:length(Y_idx_bc)]
+    Y_idx_bc_g = [Y_idx_bc[x] .+ Y_idx_bc_max .- int_range[2] for x in eachindex(Y_idx_bc)]
     for i in 1:marker_regions
         bc_ghost[i] = genghostnodes(bc_lines[i], bc_normals[i], offset)
     end
@@ -180,7 +180,7 @@ function processmesh(meshname::String, markernames)
     # Concatenate all 
     #Y = [tri_faces; bottom_lines; left_lines; right_lines; top_lines;
     #    bottom_ghost; left_ghost; right_ghost; top_ghost]
-    #M = length(Y)
+    #M = lastindex(Y)
     # Generate Cells vector for plotting
     #cells = [tri_cells; bottom_cells; left_cells; right_cells; top_cells]
 

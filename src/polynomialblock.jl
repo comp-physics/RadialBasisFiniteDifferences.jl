@@ -8,8 +8,8 @@ function polynomialblock(F, X)
     # Outputs:  P - Monomial Basis Block
 
     # Determine size for Polynomial Block
-    n = length(F)
-    m = length(X)
+    n = lastindex(F)
+    m = lastindex(X)
     # Determine size for Distance Block
     #X_shift = Array{SVector,1}(undef, m)
     # Pre-shift Values

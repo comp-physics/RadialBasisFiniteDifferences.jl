@@ -7,8 +7,8 @@ function polylinearoperator(X, F, F_x, F_y, F_xx, F_yy, F_xy)
     # Generate RHS Corresponding to Linear Operators on RBF System
 
     # Determine size for arrays
-    n_p = length(F)
-    m = length(X)
+    n_p = lastindex(F)
+    m = lastindex(X)
     r_F = Matrix{Float64}(undef, m, n_p)
     r_Fx = Matrix{Float64}(undef, m, n_p)
     r_Fy = Matrix{Float64}(undef, m, n_p)
@@ -54,8 +54,8 @@ function polylinearoperator(X, F_xk, F_yk)
     # Case for Hyperviscosity operator 
 
     # Determine size for arrays
-    n_p = length(F_xk)
-    m = length(X)
+    n_p = lastindex(F_xk)
+    m = lastindex(X)
     r_Fxk = Matrix{Float64}(undef, m, n_p)
     r_Fyk = Matrix{Float64}(undef, m, n_p)
 
