@@ -6,6 +6,7 @@ module RadialBasisFiniteDifferences
 import DynamicPolynomials: @polyvar
 import DynamicPolynomials: monomials
 import DynamicPolynomials: differentiate
+# using DynamicPolynomials: @polyvar, monomials, differentiate
 using FixedPolynomials
 using LinearAlgebra
 using StaticArrays

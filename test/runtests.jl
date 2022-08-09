@@ -10,6 +10,11 @@ using SafeTestsets
     include("poisson_test.jl")
 end
 
+# Poisson Test w/ Mesh Import
+@safetestset "Mesh Import Test" begin
+    include("mesh_import_test.jl")
+end
+
 # Hyperviscosity Operator Test
 @safetestset "Hyperviscosity Test" begin
     include("hyperviscosity_test.jl")

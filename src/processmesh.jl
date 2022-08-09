@@ -117,7 +117,6 @@ function processmesh(meshname::String, markernames)
 
         #Add to BCcells
         #cells[Y_idx_bc[i]] = bc_cells
-        display(i)
         bc_cells[Y_idx_bc[i] .- int_range[2]] = bc_cell
     end
 
