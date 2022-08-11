@@ -1,6 +1,6 @@
 function calculatenormal(X, BCelements)
-    BCnormals = Array{Vector,1}(undef, length(BCelements))
-    BCtangents = Array{Vector,1}(undef, length(BCelements))
+    BCnormals = Array{SVector{2}}(undef, length(BCelements))
+    BCtangents = Array{SVector{2}}(undef, length(BCelements))
     x_normals = zeros(length(BCelements))
     y_normals = zeros(length(BCelements))
     for i in eachindex(BCelements)

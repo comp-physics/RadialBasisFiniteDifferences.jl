@@ -8,7 +8,7 @@ function extractcoordinates(fid, field_x::String, field_y::String)
 
     # Generating X
     x_ = [x y]
-    X = copy(vec(reinterpret(SVector{2,Float64}, x_')))
+    X = vec(reinterpret(SVector{2,Float64}, x_'))
 
     return X, x_'
 end

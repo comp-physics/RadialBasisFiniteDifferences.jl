@@ -36,7 +36,7 @@ function processmesh(meshname::String, markernames)
     add_to_graph!(hnsw_y)
     # Find nearest neighbor for each X point
     idxs_y, dists_y = knn_search(hnsw_y, Y_points, 2)
-    idxs_y = [convert.(Int, idxs_y[x]) for x in eachindex(idxs_y)]
+    #idxs_y = [convert.(Int, idxs_y[x]) for x in eachindex(idxs_y)]
     # Mean distance
     h_y = mean(dists_y)[2]
 
@@ -127,10 +127,10 @@ function processmesh(meshname::String, markernames)
     add_to_graph!(hnsw_y)
     # Find nearest neighbor for each X point
     idxs_y, dists_y = knn_search(hnsw_y, Y[Y_idx_bc[1][1]], 1)
-    idxs_y = convert.(Int, idxs_y)
+    #idxs_y = convert.(Int, idxs_y)
     normal_check = bc_normals[1][1]
-    Y[idxs_y[1]]
-    Y[Y_idx_bc[1][1]]
+    #Y[idxs_y[1]]
+    #Y[Y_idx_bc[1][1]]
     # Orient normals such that they point out of domain
     # Usually only applied to meshes with holes inside
     inward_direction = Y[Y_idx_bc[1][1]] - Y[idxs_y[1]]
@@ -149,8 +149,8 @@ function processmesh(meshname::String, markernames)
     end
     # Reconstruct Y Dataset and set indices
     Y_idx_in = int_range[1]:int_range[2]
-    Y_idx_bc
-    Y_idx_bc_g
+    #Y_idx_bc
+    #Y_idx_bc_g
     append!(Y, Y_bc_g) # Append ghost nodes to Y 
 
     # Concatenate Cells
