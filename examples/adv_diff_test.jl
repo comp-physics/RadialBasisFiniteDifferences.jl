@@ -39,9 +39,9 @@ hnsw_y = HierarchicalNSW(Y)
 add_to_graph!(hnsw_y)
 # Find single nearest neighbor for each Y point
 idxs_y, dists_y = knn_search(hnsw_y, X, 1)
-idxs_y = [convert.(Int, idxs_y[x]) for x = 1:length(idxs_y)]
+idxs_y = [convert.(Int, idxs_y[x]) for x in eachindex(idxs_y)]
 # Proceed with overwrite
-for i = 1:length(X)
+for i in eachindex(X)
     Y[idxs_y[i][1]] = X[i]
 end
 
@@ -54,17 +54,19 @@ polydeg = 5; # Augmented polynomial degree.
 n = 2 * binomial(polydeg + 2, 2) # Stencil size.
 
 ### Generate Global Operator Matrices from Local RBF Operator Matrices
-E, Dx, Dy, Dxx, Dyy, Dxy = generateOperator(X, Y, rbfdeg, n, polydeg)
+E, Dx, Dy, Dxx, Dyy, Dxy = generate_operator(X, Y, rbfdeg, n, polydeg, X_idx_in, X_idx_bc,
+                                             X_idx_bc_g, Y_idx_in,
+                                             Y_idx_bc, Y_idx_bc_g)
 
 ### Construct global discretized PDE system
 # Importing syntax from Tominec then porting to Julia
 x₀ = zeros(length(X))
 f_init(x, y) = ((x - 0.5)^2 + (y - 0.5)^2 <= (0.2)^2) ? 10 : 1
-for i = 1:length(X)
+for i in eachindex(X)
     x₀[i] = f_init(X[i][1], X[i][2]) # Initial Condition
 end
 y₀ = zeros(length(Y))
-for i = 1:length(Y)
+for i in eachindex(Y)
     y₀[i] = f_init(Y[i][1], Y[i][2]) # Initial Condition
 end
 
@@ -77,7 +79,7 @@ hnsw_y = HierarchicalNSW(Y)
 add_to_graph!(hnsw_y)
 # Find nearest neighbor for each X point
 idxs_y, dists_y = knn_search(hnsw_y, Y, 2)
-idxs_y = [convert.(Int, idxs_y[x]) for x = 1:length(idxs_y)]
+idxs_y = [convert.(Int, idxs_y[x]) for x in eachindex(idxs_y)]
 # Mean distance
 h_y = mean(dists_y)[2]
 
@@ -102,32 +104,34 @@ w_bc = Array{typeof(Dx)}(undef, length(markernames))
 w_bc_g = Array{typeof(Dx)}(undef, length(markernames))
 w_bc_inv = deepcopy(w_bc)
 w_bc_int = deepcopy(w_bc)
-w_normal_x = [[bc_normals[x][y][1] for y = 1:length(bc_normals[x])] for x = 1:length(bc_normals)]
-w_normal_y = [[bc_normals[x][y][2] for y = 1:length(bc_normals[x])] for x = 1:length(bc_normals)]
+w_normal_x = [[bc_normals[x][y][1] for y in 1:length(bc_normals[x])]
+              for x in eachindex(bc_normals)]
+w_normal_y = [[bc_normals[x][y][2] for y in 1:length(bc_normals[x])]
+              for x in eachindex(bc_normals)]
 # Inlet
 #w_bc[1] = Dx[Y_idx_bc[1], Y_idx_bc[1]]
 w_bc_g[1] = Dx[Y_idx_bc[1], Y_idx_bc_g[1]]
 w_bc_inv[1] = inv(Array(w_bc_g[1]))
 w_bc_int[1] = Dx[Y_idx_bc[1], setdiff(1:end, Y_idx_bc_g[1])]
-Y_idx_bc_int[1] = setdiff(1:length(Y), Y_idx_bc_g[1])
+Y_idx_bc_int[1] = setdiff(eachindex(Y), Y_idx_bc_g[1])
 # Outlet
 #w_bc[2] = Dx[Y_idx_bc[2], Y_idx_bc[2]]
 w_bc_g[2] = Dx[Y_idx_bc[2], Y_idx_bc_g[2]]
 w_bc_inv[2] = inv(Array(w_bc_g[2]))
 w_bc_int[2] = Dx[Y_idx_bc[2], setdiff(1:end, Y_idx_bc_g[2])]
-Y_idx_bc_int[2] = setdiff(1:length(Y), Y_idx_bc_g[2])
+Y_idx_bc_int[2] = setdiff(eachindex(Y), Y_idx_bc_g[2])
 # Top
 #w_bc[3] = Dy[Y_idx_bc[3], Y_idx_bc[3]]
 w_bc_g[3] = Dy[Y_idx_bc[3], Y_idx_bc_g[3]]
 w_bc_inv[3] = inv(Array(w_bc_g[3]))
 w_bc_int[3] = Dy[Y_idx_bc[3], setdiff(1:end, Y_idx_bc_g[3])]
-Y_idx_bc_int[3] = setdiff(1:length(Y), Y_idx_bc_g[3])
+Y_idx_bc_int[3] = setdiff(eachindex(Y), Y_idx_bc_g[3])
 # Bottom
 #w_bc[4] = Dy[Y_idx_bc[4], Y_idx_bc[4]]
 w_bc_g[4] = Dy[Y_idx_bc[4], Y_idx_bc_g[4]]
 w_bc_inv[4] = inv(Array(w_bc_g[4]))
 w_bc_int[4] = Dy[Y_idx_bc[4], setdiff(1:end, Y_idx_bc_g[4])]
-Y_idx_bc_int[4] = setdiff(1:length(Y), Y_idx_bc_g[4])
+Y_idx_bc_int[4] = setdiff(eachindex(Y), Y_idx_bc_g[4])
 
 uy_idx_offset = length(Y)
 function cons_sys(du, u, p, t)
@@ -165,33 +169,33 @@ function cons_sys(du, u, p, t)
     du[Y_idx_bc_g[1]] .= 0.0
     du[Y_idx_bc_g[2]] .= 0.0
     du[Y_idx_bc_g[3]] .= 0.0
-    du[Y_idx_bc_g[4]] .= 0.0
-
+    return du[Y_idx_bc_g[4]] .= 0.0
 end
 
 M_mass = E' * E
 
 p = (α, h_y, u_x, u_y,
-    Dx, Dy, Dxx, Dyy, E, Δᵏ, k,
-    Y_idx_in, Y_idx_bc, Y_idx_bc_g, Y_idx_bc_int,
-    w_bc, w_bc_g, w_bc_inv, w_bc_int)
-tspan = [0.0, 2.5]
+     Dx, Dy, Dxx, Dyy, E, Δᵏ, k,
+     Y_idx_in, Y_idx_bc, Y_idx_bc_g, Y_idx_bc_int,
+     w_bc, w_bc_g, w_bc_inv, w_bc_int)
+tspan = [0.0, 5.0]
 f = ODEFunction(cons_sys)
 probl = ODEProblem(f, x₀, tspan, p)
-sol = solve(probl, SSPRK43(), progress=true, progress_steps=1)
+sol = solve(probl, SSPRK43(); progress=true, progress_steps=1)
 
 x_final = sol(tspan[2])
 x_final = sol(1.0)
 using GLMakie
 # Plot including Ghost Nodes
-Makie.scatter(Tuple.(X), color=x_final, axis=(aspect=DataAspect(),))
+Makie.scatter(Tuple.(X); color=x_final, axis=(aspect=DataAspect(),))
 # Plot Removing Ghost Nodes
-idx_real = 1:minimum(minimum(Y_idx_bc_g))-1
-Makie.scatter(Tuple.(X[idx_real]), color=x_final[idx_real], axis=(aspect=DataAspect(),))
+idx_real = 1:(minimum(minimum(Y_idx_bc_g)) - 1)
+Makie.scatter(Tuple.(X[idx_real]); color=x_final[idx_real], axis=(aspect=DataAspect(),))
 
 # Testing BC Operators
 using Plots
 u = sol(1.0)
+u = sol(tspan[2])
 u_right = -w_bc_inv[2] * (w_bc_int[2] * u[Y_idx_bc_int[2]])
 Plots.plot(u_right)
 u_bottom = -w_bc_inv[4] * (w_bc_int[4] * u[Y_idx_bc_int[4]])
@@ -201,4 +205,3 @@ Plots.plot(u_bottom)
 #vtk_grid("fields", x_point_mat, cells) do vtk
 #    vtk["C"] = x_final[1:length(cells)]
 #end
-
