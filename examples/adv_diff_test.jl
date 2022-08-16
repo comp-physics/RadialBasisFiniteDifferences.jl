@@ -3,6 +3,7 @@
 #   for determining breaking changes in the RBF-FD library
 
 # Declaring Dependencies
+using Revise
 using StaticArrays
 using HNSW
 using SparseArrays
@@ -91,7 +92,13 @@ CFL = 1
 delta_t = CFL * h_y / u_x
 ### Generate Hyperviscosity Operator
 k = 2
+rbfdeg = 5; # PHS power (r^p).
+polydeg = 5; # Augmented polynomial degree.
+n = 2 * binomial(polydeg + 2, 2) # Stencil size.
 Dxk, Dyk = hyperviscosity_operator(2 * k, X, Y, rbfdeg, n, polydeg)
+# Dxk, Dyk = hyperviscosity_operator(2 * k, X, Y, rbfdeg, n, polydeg, X_idx_in, X_idx_bc,
+#                                    X_idx_bc_g, Y_idx_in,
+#                                    Y_idx_bc, Y_idx_bc_g)
 #Δᵏ = (Dxx + Dyy)^k
 Δᵏ = (Dxk + Dyk)
 # Compare to Dxx
@@ -141,8 +148,14 @@ function cons_sys(du, u, p, t)
     w_bc, w_bc_g, w_bc_inv, w_bc_int = p
 
     # Interior
-    # du .= E' * (α * D_xx * u + α * D_yy * u - D_x * u_x * u - D_y * u_y * u) -
-    #         1.0 * h_y^(2*k) * Δᵏ * u
+    du .= E' * (α * D_xx * u + α * D_yy * u - D_x * u_x * u - D_y * u_y * u) -
+          1.0 * h_y^(2 * k) * Δᵏ * u
+    # Zero out ghosts
+    # du[Y_idx_bc[1]] .= 0.0
+    # du[Y_idx_bc_g[1]] .= 0.0
+    # du[Y_idx_bc_g[2]] .= 0.0
+    # du[Y_idx_bc_g[3]] .= 0.0
+    # du[Y_idx_bc_g[4]] .= 0.0
 
     # Right Boundary
     # ux - indeces
@@ -162,14 +175,15 @@ function cons_sys(du, u, p, t)
     u[Y_idx_bc_g[4]] .= -w_bc_inv[4] * (w_bc_int[4] * u[Y_idx_bc_int[4]])
 
     # Interior
-    du .= E' * (α * D_xx * u + α * D_yy * u - D_x * u_x * u - D_y * u_y * u) -
-          1.0 * h_y^(2 * k) * Δᵏ * u
+    #du .= E' * (α * D_xx * u + α * D_yy * u - D_x * u_x * u - D_y * u_y * u) -
+    #      1.0 * h_y^(2 * k) * Δᵏ * u
     # Zero out ghosts
-    du[Y_idx_bc[1]] .= 0.0
-    du[Y_idx_bc_g[1]] .= 0.0
-    du[Y_idx_bc_g[2]] .= 0.0
-    du[Y_idx_bc_g[3]] .= 0.0
-    return du[Y_idx_bc_g[4]] .= 0.0
+    # du[Y_idx_bc[1]] .= 0.0
+    # du[Y_idx_bc_g[1]] .= 0.0
+    # du[Y_idx_bc_g[2]] .= 0.0
+    # du[Y_idx_bc_g[3]] .= 0.0
+    # du[Y_idx_bc_g[4]] .= 0.0
+    return nothing
 end
 
 M_mass = E' * E
@@ -178,13 +192,13 @@ p = (α, h_y, u_x, u_y,
      Dx, Dy, Dxx, Dyy, E, Δᵏ, k,
      Y_idx_in, Y_idx_bc, Y_idx_bc_g, Y_idx_bc_int,
      w_bc, w_bc_g, w_bc_inv, w_bc_int)
-tspan = [0.0, 5.0]
+tspan = [0.0, 15.0]
 f = ODEFunction(cons_sys)
 probl = ODEProblem(f, x₀, tspan, p)
 sol = solve(probl, SSPRK43(); progress=true, progress_steps=1)
 
 x_final = sol(tspan[2])
-x_final = sol(1.0)
+x_final = sol(9.0)
 using GLMakie
 # Plot including Ghost Nodes
 Makie.scatter(Tuple.(X); color=x_final, axis=(aspect=DataAspect(),))
@@ -194,12 +208,12 @@ Makie.scatter(Tuple.(X[idx_real]); color=x_final[idx_real], axis=(aspect=DataAsp
 
 # Testing BC Operators
 using Plots
-u = sol(1.0)
+u = sol(9.0)
 u = sol(tspan[2])
 u_right = -w_bc_inv[2] * (w_bc_int[2] * u[Y_idx_bc_int[2]])
-Plots.plot(u_right)
+Plots.plot(u_right; label="Right Boundary", legend=:topleft)
 u_bottom = -w_bc_inv[4] * (w_bc_int[4] * u[Y_idx_bc_int[4]])
-Plots.plot(u_bottom)
+Plots.plot(u_bottom; label="Bottom Boundary", legend=:topleft)
 
 # Generate VTK Mesh Data Output
 #vtk_grid("fields", x_point_mat, cells) do vtk
