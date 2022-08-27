@@ -85,8 +85,8 @@ idxs_y = [convert.(Int, idxs_y[x]) for x in eachindex(idxs_y)]
 h_y = mean(dists_y)[2]
 
 # Adding constant advection to system
-α = 0.001 # Diffusion Coefficient 
-u_x = 0.5
+α = 0.01 * 100 # Diffusion Coefficient 
+u_x = 0.5 * 0
 u_y = 0.0
 CFL = 1
 delta_t = CFL * h_y / u_x
@@ -95,12 +95,12 @@ k = 2
 rbfdeg = 5; # PHS power (r^p).
 polydeg = 5; # Augmented polynomial degree.
 n = 2 * binomial(polydeg + 2, 2) # Stencil size.
-Dxk, Dyk = hyperviscosity_operator(2 * k, X, Y, rbfdeg, n, polydeg)
-# Dxk, Dyk = hyperviscosity_operator(2 * k, X, Y, rbfdeg, n, polydeg, X_idx_in, X_idx_bc,
-#                                    X_idx_bc_g, Y_idx_in,
-#                                    Y_idx_bc, Y_idx_bc_g)
+#Dxk, Dyk = hyperviscosity_operator(2 * k, X, Y, rbfdeg, n, polydeg)
+Dxk, Dyk = hyperviscosity_operator(2 * k, X, Y, rbfdeg, n, polydeg, X_idx_in, X_idx_bc,
+                                   X_idx_bc_g, Y_idx_in,
+                                   Y_idx_bc, Y_idx_bc_g)
 #Δᵏ = (Dxx + Dyy)^k
-Δᵏ = (Dxk + Dyk)
+Δᵏ = (Dxk + Dyk) * 1.0
 # Compare to Dxx
 #Dxk ≈ Dxx
 #Dyk ≈ Dyy
@@ -118,25 +118,25 @@ w_normal_y = [[bc_normals[x][y][2] for y in 1:length(bc_normals[x])]
 # Inlet
 #w_bc[1] = Dx[Y_idx_bc[1], Y_idx_bc[1]]
 w_bc_g[1] = Dx[Y_idx_bc[1], Y_idx_bc_g[1]]
-w_bc_inv[1] = inv(Array(w_bc_g[1]))
+w_bc_inv[1] = sparse(inv(Array(w_bc_g[1])))
 w_bc_int[1] = Dx[Y_idx_bc[1], setdiff(1:end, Y_idx_bc_g[1])]
 Y_idx_bc_int[1] = setdiff(eachindex(Y), Y_idx_bc_g[1])
 # Outlet
 #w_bc[2] = Dx[Y_idx_bc[2], Y_idx_bc[2]]
 w_bc_g[2] = Dx[Y_idx_bc[2], Y_idx_bc_g[2]]
-w_bc_inv[2] = inv(Array(w_bc_g[2]))
+w_bc_inv[2] = sparse(inv(Array(w_bc_g[2])))
 w_bc_int[2] = Dx[Y_idx_bc[2], setdiff(1:end, Y_idx_bc_g[2])]
 Y_idx_bc_int[2] = setdiff(eachindex(Y), Y_idx_bc_g[2])
 # Top
 #w_bc[3] = Dy[Y_idx_bc[3], Y_idx_bc[3]]
 w_bc_g[3] = Dy[Y_idx_bc[3], Y_idx_bc_g[3]]
-w_bc_inv[3] = inv(Array(w_bc_g[3]))
+w_bc_inv[3] = sparse(inv(Array(w_bc_g[3])))
 w_bc_int[3] = Dy[Y_idx_bc[3], setdiff(1:end, Y_idx_bc_g[3])]
 Y_idx_bc_int[3] = setdiff(eachindex(Y), Y_idx_bc_g[3])
 # Bottom
 #w_bc[4] = Dy[Y_idx_bc[4], Y_idx_bc[4]]
 w_bc_g[4] = Dy[Y_idx_bc[4], Y_idx_bc_g[4]]
-w_bc_inv[4] = inv(Array(w_bc_g[4]))
+w_bc_inv[4] = sparse(inv(Array(w_bc_g[4])))
 w_bc_int[4] = Dy[Y_idx_bc[4], setdiff(1:end, Y_idx_bc_g[4])]
 Y_idx_bc_int[4] = setdiff(eachindex(Y), Y_idx_bc_g[4])
 
@@ -149,7 +149,7 @@ function cons_sys(du, u, p, t)
 
     # Interior
     du .= E' * (α * D_xx * u + α * D_yy * u - D_x * u_x * u - D_y * u_y * u) -
-          1.0 * h_y^(2 * k) * Δᵏ * u
+          100.0 * h_y^(2 * k) * Δᵏ * u
     # Zero out ghosts
     # du[Y_idx_bc[1]] .= 0.0
     # du[Y_idx_bc_g[1]] .= 0.0
@@ -165,6 +165,7 @@ function cons_sys(du, u, p, t)
     # ux - indeces
     u[Y_idx_bc[1]] .= 1.0
     u[Y_idx_bc_g[1]] .= 1.0
+    # u[Y_idx_bc_g[1]] .= -w_bc_inv[1] * (w_bc_int[1] * u[Y_idx_bc_int[1]])
 
     # Top Boundary
     # ux - indeces
@@ -192,13 +193,14 @@ p = (α, h_y, u_x, u_y,
      Dx, Dy, Dxx, Dyy, E, Δᵏ, k,
      Y_idx_in, Y_idx_bc, Y_idx_bc_g, Y_idx_bc_int,
      w_bc, w_bc_g, w_bc_inv, w_bc_int)
-tspan = [0.0, 15.0]
+tspan = [0.0, 10.0]
 f = ODEFunction(cons_sys)
 probl = ODEProblem(f, x₀, tspan, p)
 sol = solve(probl, SSPRK43(); progress=true, progress_steps=1)
+#sol = solve(probl, Tsit5(); progress=true, progress_steps=1)
 
+x_final = sol(5.0)
 x_final = sol(tspan[2])
-x_final = sol(9.0)
 using GLMakie
 # Plot including Ghost Nodes
 Makie.scatter(Tuple.(X); color=x_final, axis=(aspect=DataAspect(),))
@@ -208,12 +210,14 @@ Makie.scatter(Tuple.(X[idx_real]); color=x_final[idx_real], axis=(aspect=DataAsp
 
 # Testing BC Operators
 using Plots
-u = sol(9.0)
+u = sol(10.0)
 u = sol(tspan[2])
 u_right = -w_bc_inv[2] * (w_bc_int[2] * u[Y_idx_bc_int[2]])
 Plots.plot(u_right; label="Right Boundary", legend=:topleft)
 u_bottom = -w_bc_inv[4] * (w_bc_int[4] * u[Y_idx_bc_int[4]])
-Plots.plot(u_bottom; label="Bottom Boundary", legend=:topleft)
+Plots.plot(u_bottom; label="Bottom Boundary", legend=:topleft) #:outertopright
+u_top = -w_bc_inv[3] * (w_bc_int[3] * u[Y_idx_bc_int[3]])
+Plots.plot(u_top; label="Top Boundary", legend=:topleft)
 
 # Generate VTK Mesh Data Output
 #vtk_grid("fields", x_point_mat, cells) do vtk

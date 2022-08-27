@@ -197,6 +197,7 @@ function hyperviscosity_operator(k_deriv, X, Y, p, n, polydeg, X_idx_in, X_idx_b
     # end
     # Add BC points to graph
     add_to_graph!(hnsw_x, X_idx_in_bc)
+    #add_to_graph!(hnsw_x)
     # Calculate weights for interior 
     for i in X_idx_in
         idxs_x[i], dists_x[i] = knn_search(hnsw_x, X[X_idx_in[i]], n)

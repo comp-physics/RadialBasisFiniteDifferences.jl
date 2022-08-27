@@ -31,17 +31,17 @@ function processmesh(meshname::String, markernames)
                  for x in eachindex(tri_elements)]
 
     # Generate KNN Tree Using HNSW 
-    hnsw_y = HierarchicalNSW(Y_points)
-    #Add all data points into the graph
-    add_to_graph!(hnsw_y)
+    # hnsw_y = HierarchicalNSW(Y_points)
+    # Add all data points into the graph
+    # add_to_graph!(hnsw_y)
     # Find nearest neighbor for each X point
-    idxs_y, dists_y = knn_search(hnsw_y, Y_points, 2)
-    #idxs_y = [convert.(Int, idxs_y[x]) for x in eachindex(idxs_y)]
+    # idxs_y, dists_y = knn_search(hnsw_y, Y_points, 2)
+    # idxs_y = [convert.(Int, idxs_y[x]) for x in eachindex(idxs_y)]
     # Mean distance
-    h_y = mean(dists_y)[2]
+    # h_y = mean(dists_y)[2]
 
     # Ghost Node Offset
-    offset = abs(h_y)
+    # offset = abs(h_y) / 2
 
     # Initialize empty vectors
     #Y_idx_bc = bc_range[1]:bc_range[2]
@@ -137,6 +137,38 @@ function processmesh(meshname::String, markernames)
     normal_orient = sign(dot(inward_direction, normal_check))
     bc_normals = normal_orient .* bc_normals
     bc_tangents = normal_orient .* bc_tangents
+
+    # Generate KNN Tree Using HNSW 
+    ### Note: we can make it so that the influence of other boundaries 
+    ### is not present in BCs by evaluating NN using only interior points
+    ### then at the end add BCs to tree and eval NN of interior points
+    #Intialize HNSW struct
+    hnsw_x = HierarchicalNSW(Y)
+    #Optionally pass a subset of the indices in data to partially construct the graph
+    Y_idx_in_bc = Array(Y_idx_in)
+    for i in eachindex(Y_idx_bc)
+        append!(Y_idx_in_bc, Y_idx_bc[i])
+    end
+    # Graph only contains interior points
+    add_to_graph!(hnsw_x, Y_idx_in)
+    #add_to_graph!(hnsw_x, X_idx_in_bc)
+    # Separate according to element type
+    # Calculate NN for each BC point but without
+    # including other BCs
+    dists_x = zeros(Float64, sum(lastindex.(Y_idx_bc)))
+    count = 1
+    # Calculate BC to int spacing
+    for i in eachindex(Y_idx_bc)
+        for j in eachindex(Y_idx_bc[i])
+            idxs_local, dists_local = knn_search(hnsw_x, Y[Y_idx_bc[i][j]], 1)
+            dists_x[count] = dists_local[1]
+            count += 1
+        end
+    end
+    # Mean distance
+    h_x = mean(dists_x)
+    # Ghost Node Offset
+    offset = abs(h_x)
 
     # Generate ghost nodes 
     Y_idx_bc_g = [Y_idx_bc[x] .+ Y_idx_bc_max .- int_range[2] for x in eachindex(Y_idx_bc)]
