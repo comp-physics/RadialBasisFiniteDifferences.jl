@@ -7,7 +7,7 @@ function rbfblock(rbf_expr, X)
     # Outputs:  Φ - RBF Matrix Block
 
     # Determine size for Distance Block
-    m = length(X)
+    m = lastindex(X)
     D = Array{SVector,2}(undef, (m, m))
 
     # Generate Distance Matrix

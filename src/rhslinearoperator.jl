@@ -7,8 +7,8 @@ function rhslinearoperator(p, X, F, F_x, F_y, F_xx, F_yy, F_xy)
     # Generate RHS Corresponding to Linear Operators on RBF System
 
     # Determine size for arrays
-    n_p = length(F)
-    m = length(X)
+    n_p = lastindex(F)
+    m = lastindex(X)
     # Preallocate Shifted X_vector
     #X_shift = Array{SVector,1}(undef, m)
     # Preallocate Operator RHS
