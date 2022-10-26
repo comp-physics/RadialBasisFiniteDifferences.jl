@@ -30,7 +30,7 @@ function generate_operator(X, Y, p, n, polydeg)
     scale = Array{SVector{2},1}(undef, m)
 
     ### Testing looping through all indeces of X 
-    for i in eachindex(X)
+    Threads.@threads for i in eachindex(X)
         ### Add Shifting and Scaling of Local X Matrices
         X_shift, scale_x, scale_y = scalestencil(X[idxs_x[i]])
         scale[i] = [scale_x, scale_y]
@@ -64,7 +64,7 @@ function generate_operator(X, Y, p, n, polydeg)
     Dxx_loc = zeros(lastindex(Y), n)
     Dyy_loc = zeros(lastindex(Y), n)
     Dxy_loc = zeros(lastindex(Y), n)
-    for k in eachindex(Y)
+    Threads.@threads for k in eachindex(Y)
         # Take interpolation matrix from x in X which is closest to the current y in Y
         idx_inv = idxs_y_x[k]
         idx_inv_local = idxs_x[idx_inv][1][1]
