@@ -13,16 +13,25 @@ function generate_operator(X, Y, p, n, polydeg)
 
     # Generate KNN Tree Using HNSW 
     #Intialize HNSW struct
-    hnsw_x = HierarchicalNSW(X)
+    # hnsw_x = HierarchicalNSW(X)
     #Add all data points into the graph
     #Optionally pass a subset of the indices in data to partially construct the graph
-    add_to_graph!(hnsw_x)
+    # add_to_graph!(hnsw_x)
     # Find k (approximate) nearest neighbors for each of the queries
-    idxs_x, dists_x = knn_search(hnsw_x, X, n)
+    # idxs_x, dists_x = knn_search(hnsw_x, X, n)
     #idxs_x = [convert.(Int, idxs_x[x]) for x in eachindex(idxs_x)] # Convert to readable
     # Find single nearest neighbor for each Y point
-    idxs_y_x, dists_y_x = knn_search(hnsw_x, Y, 1)
+    # idxs_y_x, dists_y_x = knn_search(hnsw_x, Y, 1)
     #idxs_y_x = [convert.(Int, idxs_y_x[x]) for x in eachindex(idxs_y_x)] # Convert to readable
+
+    # Generate Knn Tree using NearestNeighbors
+    # Addressing a bug where HNSW fails to return point itself 
+    # when calculating neighbors.
+    hnsw_x = KDTree(X)
+    # Find k (approximate) nearest neighbors for each of the queries
+    idxs_x, dists_x = knn(hnsw_x, X, n, true)
+    # Find single nearest neighbor for each Y point
+    idxs_y_x, dists_y_x = knn(hnsw_x, Y, 1)
 
     ### Storing matrices and scale factors
     m = lastindex(X)

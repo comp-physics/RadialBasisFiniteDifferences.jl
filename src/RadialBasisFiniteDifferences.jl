@@ -18,6 +18,7 @@ using Statistics
 using WriteVTK
 using Symbolics
 using RuntimeGeneratedFunctions
+using NearestNeighbors
 
 # RBF and Polynomial Interpolation
 include("scalestencil.jl")
