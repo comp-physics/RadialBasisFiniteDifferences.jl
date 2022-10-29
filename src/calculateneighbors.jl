@@ -79,8 +79,8 @@ function calculateneighbors(X, Y, n, X_idx_in, X_idx_bc, X_idx_bc_g, Y_idx_in, Y
     # hnsw_x = KDTree(X[X_idx_in_bc])
     hnsw_x = KDTree(X)
     # Calculate weights for interior 
-    for i in X_idx_in
-        idxs_x[i], dists_x[i] = knn(hnsw_x, X[X_idx_in[i]], n, true)
+    for i in eachindex(X_idx_in)
+        idxs_x[X_idx_in[i]], dists_x[X_idx_in[i]] = knn(hnsw_x, X[X_idx_in[i]], n, true)
     end
     # Add all points to graph
     # Calculate Y Nearest Neighbor
