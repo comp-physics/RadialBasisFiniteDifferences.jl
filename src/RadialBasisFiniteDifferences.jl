@@ -44,6 +44,9 @@ export polylinearoperator
 #include("rbfdxx.jl")
 #include("rbfdyy.jl")
 #include("rbfdxy.jl")
+# Nearest Neighbor 
+include("calculateneighbors.jl")
+export calculateneighbors
 
 # Hyperviscosity Methods 
 include("rbfbasis_k.jl")
