@@ -190,7 +190,7 @@ function generate_operator(X, Y, p, n, polydeg, X_idx_in, X_idx_bc, X_idx_bc_g, 
     F, F_x, F_y, F_xx, F_yy, F_xy = polynomialbasis(polydeg, 2)
 
     # Generate KNN Tree Using NearestNeighbors
-    idxs_x, idxs_y_x, dists_x, dists_y_x = calculateneighbors(X, Y, X_idx_in, X_idx_bc,
+    idxs_x, idxs_y_x, dists_x, dists_y_x = calculateneighbors(X, Y, n, X_idx_in, X_idx_bc,
                                                               X_idx_bc_g, Y_idx_in,
                                                               Y_idx_bc,
                                                               Y_idx_bc_g)
