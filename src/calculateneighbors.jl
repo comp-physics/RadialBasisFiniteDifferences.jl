@@ -23,7 +23,10 @@ function calculateneighbors(X, Y, n, X_idx_in, X_idx_bc, X_idx_bc_g, Y_idx_in, Y
         a = @SVector [Inf, Inf]
         X_in_bc = fill(a, lastindex(X))
         X_in_bc[X_idx_in] .= X[X_idx_in]
-        X_in_bc[X_idx_bc[i]] .= X[X_idx_bc[i]]
+        for k in eachindex(X_idx_bc)
+            X_in_bc[X_idx_bc[k]] .= X[X_idx_bc[k]]
+        end
+        # X_in_bc[X_idx_bc[i]] .= X[X_idx_bc[i]]
         X_in_bc[X_idx_bc_g[i]] .= X[X_idx_bc_g[i]]
         # Create Subset Tree
         hnsw_x = KDTree(X_in_bc)
