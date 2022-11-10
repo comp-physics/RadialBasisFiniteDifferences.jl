@@ -13,16 +13,25 @@ function generate_operator(X, Y, p, n, polydeg)
 
     # Generate KNN Tree Using HNSW 
     #Intialize HNSW struct
-    hnsw_x = HierarchicalNSW(X)
+    # hnsw_x = HierarchicalNSW(X)
     #Add all data points into the graph
     #Optionally pass a subset of the indices in data to partially construct the graph
-    add_to_graph!(hnsw_x)
+    # add_to_graph!(hnsw_x)
     # Find k (approximate) nearest neighbors for each of the queries
-    idxs_x, dists_x = knn_search(hnsw_x, X, n)
+    # idxs_x, dists_x = knn_search(hnsw_x, X, n)
     #idxs_x = [convert.(Int, idxs_x[x]) for x in eachindex(idxs_x)] # Convert to readable
     # Find single nearest neighbor for each Y point
-    idxs_y_x, dists_y_x = knn_search(hnsw_x, Y, 1)
+    # idxs_y_x, dists_y_x = knn_search(hnsw_x, Y, 1)
     #idxs_y_x = [convert.(Int, idxs_y_x[x]) for x in eachindex(idxs_y_x)] # Convert to readable
+
+    # Generate Knn Tree using NearestNeighbors
+    # Addressing a bug where HNSW fails to return point itself 
+    # when calculating neighbors.
+    hnsw_x = KDTree(X)
+    # Find k (approximate) nearest neighbors for each of the queries
+    idxs_x, dists_x = knn(hnsw_x, X, n, true)
+    # Find single nearest neighbor for each Y point
+    idxs_y_x, dists_y_x = knn(hnsw_x, Y, 1)
 
     ### Storing matrices and scale factors
     m = lastindex(X)
@@ -30,7 +39,7 @@ function generate_operator(X, Y, p, n, polydeg)
     scale = Array{SVector{2},1}(undef, m)
 
     ### Testing looping through all indeces of X 
-    for i in eachindex(X)
+    Threads.@threads for i in eachindex(X)
         ### Add Shifting and Scaling of Local X Matrices
         X_shift, scale_x, scale_y = scalestencil(X[idxs_x[i]])
         scale[i] = [scale_x, scale_y]
@@ -64,7 +73,7 @@ function generate_operator(X, Y, p, n, polydeg)
     Dxx_loc = zeros(lastindex(Y), n)
     Dyy_loc = zeros(lastindex(Y), n)
     Dxy_loc = zeros(lastindex(Y), n)
-    for k in eachindex(Y)
+    Threads.@threads for k in eachindex(Y)
         # Take interpolation matrix from x in X which is closest to the current y in Y
         idx_inv = idxs_y_x[k]
         idx_inv_local = idxs_x[idx_inv][1][1]
@@ -180,60 +189,11 @@ function generate_operator(X, Y, p, n, polydeg, X_idx_in, X_idx_bc, X_idx_bc_g, 
     # Generate Polynomial Basis Functions
     F, F_x, F_y, F_xx, F_yy, F_xy = polynomialbasis(polydeg, 2)
 
-    # Generate KNN Tree Using HNSW 
-    ### Note: we can make it so that the influence of other boundaries 
-    ### is not present in BCs by evaluating NN using only interior points
-    ### then at the end add BCs to tree and eval NN of interior points
-    #Intialize HNSW struct
-    hnsw_x = HierarchicalNSW(X)
-    #Optionally pass a subset of the indices in data to partially construct the graph
-    X_idx_in_bc = Array(X_idx_in)
-    for i in eachindex(X_idx_bc)
-        append!(X_idx_in_bc, X_idx_bc[i])
-    end
-    # Graph only contains interior points
-    add_to_graph!(hnsw_x, X_idx_in)
-    #add_to_graph!(hnsw_x, X_idx_in_bc)
-    # Separate according to element type
-    # Calculate NN for each BC point but without
-    # including other BCs
-    idxs_x = Array{SVector{n}}(undef, lastindex(X))
-    dists_x = Array{SVector{n}}(undef, lastindex(X))
-    idxs_y_x = Array{SVector{1}}(undef, lastindex(Y))
-    dists_y_x = Array{SVector{1}}(undef, lastindex(Y))
-    # Calculate BC and ghost at the same time
-    for i in eachindex(X_idx_bc)
-        for j in eachindex(X_idx_bc[i])
-            idxs_local, dists_local = knn_search(hnsw_x, X[X_idx_bc[i][j]], n - 2)
-            idxs_x[X_idx_bc[i][j]] = [X_idx_bc[i][j]; idxs_local; X_idx_bc_g[i][j]]
-            idxs_x[X_idx_bc_g[i][j]] = [X_idx_bc_g[i][j]; X_idx_bc[i][j]; idxs_local]
-            dists_x[X_idx_bc[i][j]] = [0.0; dists_local; 0.0] #Note: 0.0 at end should be ghost offset
-            dists_x[X_idx_bc_g[i][j]] = [0.0; 0.0; dists_local] # Second 0.0 should be ghost offset
-        end
-    end
-    # Remove 1 neighbor for ghost
-    # for i in eachindex(X_idx_bc)
-    #     for j in eachindex(X_idx_bc[i])
-    #         idxs_local, dists_local = knn_search(hnsw_x, X[X_idx_bc[i][j]], n - 1)
-    #         idxs_x[X_idx_bc[i][j]] = [idxs_local; X_idx_bc_g[i][j]]
-    #         idxs_x[X_idx_bc_g[i][j]] = [X_idx_bc_g[i][j]; idxs_local]
-    #         dists_x[X_idx_bc[i][j]] = [dists_local; 0.0] #Note: 0.0 at end should be ghost offset
-    #         dists_x[X_idx_bc_g[i][j]] = [0.0; dists_local] # Second 0.0 should be ghost offset
-    #     end
-    # end
-    # Add BC points to graph
-    add_to_graph!(hnsw_x, X_idx_in_bc)
-    #add_to_graph!(hnsw_x)
-    # Calculate weights for interior 
-    for i in X_idx_in
-        idxs_x[i], dists_x[i] = knn_search(hnsw_x, X[X_idx_in[i]], n)
-    end
-    # Add all points to graph
-    # Calculate Y Nearest Neighbor
-    add_to_graph!(hnsw_x)
-    for i in eachindex(Y)
-        idxs_y_x[i], dists_y_x[i] = knn_search(hnsw_x, Y[i], 1)
-    end
+    # Generate KNN Tree Using NearestNeighbors
+    idxs_x, idxs_y_x, dists_x, dists_y_x = calculateneighbors(X, Y, n, X_idx_in, X_idx_bc,
+                                                              X_idx_bc_g, Y_idx_in,
+                                                              Y_idx_bc,
+                                                              Y_idx_bc_g)
 
     ### Storing matrices and scale factors
     m = lastindex(X)
@@ -241,7 +201,7 @@ function generate_operator(X, Y, p, n, polydeg, X_idx_in, X_idx_bc, X_idx_bc_g, 
     scale = Array{SVector{2},1}(undef, m)
 
     ### Testing looping through all indeces of X 
-    for i in eachindex(X)
+    Threads.@threads for i in eachindex(X)
         ### Add Shifting and Scaling of Local X Matrices
         X_shift, scale_x, scale_y = scalestencil(X[idxs_x[i]])
         scale[i] = [scale_x, scale_y]
@@ -275,7 +235,7 @@ function generate_operator(X, Y, p, n, polydeg, X_idx_in, X_idx_bc, X_idx_bc_g, 
     Dxx_loc = zeros(lastindex(Y), n)
     Dyy_loc = zeros(lastindex(Y), n)
     Dxy_loc = zeros(lastindex(Y), n)
-    for k in eachindex(Y)
+    Threads.@threads for k in eachindex(Y)
         # Take interpolation matrix from x in X which is closest to the current y in Y
         idx_inv = idxs_y_x[k]
         idx_inv_local = idxs_x[idx_inv][1][1]

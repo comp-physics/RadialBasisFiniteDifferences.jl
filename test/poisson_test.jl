@@ -5,11 +5,12 @@
 # Declaring Dependencies
 using Test
 using StaticArrays
-using HNSW
+# using HNSW
 using SparseArrays
 using DelimitedFiles
 using Statistics
 using LinearAlgebra
+using NearestNeighbors
 
 # Main Library
 using RadialBasisFiniteDifferences
@@ -32,11 +33,11 @@ y_normals = readdlm("data/y_normals.csv", ',', Float64)
 
 ### Overwrite Y closest to X to X value
 # Generate KNN Tree Using HNSW 
-hnsw_y = HierarchicalNSW(Y)
+hnsw_y = KDTree(Y)
 #Add all data points into the graph
-add_to_graph!(hnsw_y)
+#add_to_graph!(hnsw_y)
 # Find single nearest neighbor for each Y point
-idxs_y, dists_y = knn_search(hnsw_y, X, 1)
+idxs_y, dists_y = knn(hnsw_y, X, 1, true)
 idxs_y = [convert.(Int, idxs_y[x]) for x in 1:length(idxs_y)]
 # Proceed with overwrite
 for i in 1:length(X)
@@ -92,11 +93,11 @@ end
 
 # Scale the PDE operator and the RHS.
 # Generate KNN Tree Using HNSW 
-hnsw_x = HierarchicalNSW(X)
+hnsw_x = KDTree(X)
 #Add all data points into the graph
-add_to_graph!(hnsw_x)
+# add_to_graph!(hnsw_x)
 # Find nearest neighbor for each X point
-idxs_x, dists_x = knn_search(hnsw_x, X, 2)
+idxs_x, dists_x = knn(hnsw_x, X, 2, true)
 idxs_x = [convert.(Int, idxs_x[x]) for x in 1:length(idxs_x)]
 # Mean distance
 h = mean(dists_x)[2]
