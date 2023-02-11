@@ -337,3 +337,155 @@ function generate_operator(X, Y, p, n, polydeg, X_idx_in, X_idx_bc, X_idx_bc_g, 
     #spy(Dxy)
     return E, Dx, Dy, Dxx, Dyy, Dxy
 end
+
+function generate_operator(X, p, n, polydeg)
+    # Generate Global Operator Matrices
+    # Can also generate multiple methods depending on the element type of X 
+    # Can allow for providing dimensionality 
+
+    ### Manually implementing Flyer RBF Interpolation System
+    # Generate RBFs 
+    rbf, rbf_x, rbf_y, rbf_xx, rbf_yy, rbf_xy = rbfbasis(p)
+
+    # Polynomial Interpolation System
+    # Generate Polynomial Basis Functions
+    F, F_x, F_y, F_xx, F_yy, F_xy = polynomialbasis(polydeg, 2)
+
+    # Generate KNN Tree Using HNSW 
+    #Intialize HNSW struct
+    # hnsw_x = HierarchicalNSW(X)
+    #Add all data points into the graph
+    #Optionally pass a subset of the indices in data to partially construct the graph
+    # add_to_graph!(hnsw_x)
+    # Find k (approximate) nearest neighbors for each of the queries
+    # idxs_x, dists_x = knn_search(hnsw_x, X, n)
+    #idxs_x = [convert.(Int, idxs_x[x]) for x in eachindex(idxs_x)] # Convert to readable
+    # Find single nearest neighbor for each Y point
+    # idxs_y_x, dists_y_x = knn_search(hnsw_x, Y, 1)
+    #idxs_y_x = [convert.(Int, idxs_y_x[x]) for x in eachindex(idxs_y_x)] # Convert to readable
+
+    # Generate Knn Tree using NearestNeighbors
+    # Addressing a bug where HNSW fails to return point itself 
+    # when calculating neighbors.
+    hnsw_x = KDTree(X)
+    # Find k (approximate) nearest neighbors for each of the queries
+    idxs_x, dists_x = knn(hnsw_x, X, n, true)
+
+    ### Storing matrices and scale factors
+    m = lastindex(X)
+    M_int = Array{Matrix,2}(undef, (m, 2))
+    scale = Array{SVector{2},1}(undef, m)
+
+    ### Testing looping through all indeces of X 
+    ### Need to perform several shifts in order to get the correct values for PHS
+    # Evaluate over domain of Y
+    E_loc = zeros(lastindex(X), n)
+    Dx_loc = zeros(lastindex(X), n)
+    Dy_loc = zeros(lastindex(X), n)
+    Dxx_loc = zeros(lastindex(X), n)
+    Dyy_loc = zeros(lastindex(X), n)
+    Dxy_loc = zeros(lastindex(X), n)
+    X_stored = Array{SVector{2},1}(undef, lastindex(X))
+    Threads.@threads for i in eachindex(X)
+        ### Add Shifting and Scaling of Local X Matrices
+        X_local = X[idxs_x[i]]
+        # Shift to origin
+        # Determine size for Distance Block
+        X_shift = Array{SVector{2},1}(undef, lastindex(X_local)) # Rework to use SVector
+        X_ = Array{SVector{2},1}(undef, lastindex(X_local)) # Rework to use SVector
+        # Pre-shift Values
+        # Assuming first value is the current interpolation point
+        x_shift = X_local[1]
+        # X_shift
+        for j in eachindex(X_local)
+            X_[j] = X_local[j] - x_shift
+        end
+
+        # Shift the stencil nodes so that the center node is the origin
+        for i in eachindex(X_local)
+            X_shift[i] = [X_[i][1], X_[i][2]]
+        end
+
+        # Add small offset to prevent div-by-0
+        # X_shift[1] = [nextfloat(0.0), nextfloat(0.0)]
+        X_shift[1] = [eps(), eps()]
+
+        ### Generate Interpolation Matrix
+        # Pre-invert
+        #M, M_inv = interpolationmatrix(X_shift, rbf, F)
+        ### Generate Interpolation Matrix
+        P_block = polynomialblock(F, X_shift)
+        Φ = rbfblock(rbf, X_shift)
+        A = hvcat((2, 2), Φ, P_block, P_block', zeros(size(P_block)[2], size(P_block)[2]))
+
+        M = A
+        M_inv = inv(A)
+
+        M_int[i, 1] = M
+        M_int[i, 2] = M_inv
+
+        # Generate Poly RHS at every Y point 
+        # c, cx, cy, cxx, cyy, cxy = polylinearoperator(X_shift, F, F_x, F_y, F_xx, F_yy, F_xy)
+        # Change to calculate per each stencil
+        c, cx, cy, cxx, cyy, cxy = polylinearoperator([X_shift[1]], F, F_x, F_y, F_xx, F_yy,
+                                                      F_xy)
+
+        # Stencil distance matrices. Center point is in the origin (0)
+        stencil_coord = X_shift
+
+        # Compute distance matrix
+        # Here the distance matrix is actually not scaled
+        # Oth derivative 
+        #b = r_stencil.^p
+        b = rbf.(stencil_coord)
+
+        # 1st derivatives 
+        #bx = p .* dx_stencil .* r_stencil.^(p-2)
+        bx = rbf_x.(stencil_coord)
+        #by = p .* dy_stencil .* r_stencil.^(p-2)
+        by = rbf_y.(stencil_coord)
+
+        # 2nd derivatives 
+        #bxx = p .* r_stencil.^(p-2) + p * (p-2) .* r_stencil.^(p-4) .* dx_stencil.^2
+        bxx = rbf_xx.(stencil_coord)
+        #byy = p .* r_stencil.^(p-2) + p * (p-2) .* r_stencil.^(p-4) .* dy_stencil.^2
+        byy = rbf_yy.(stencil_coord)
+        #bxy = p * (p-2) * r_stencil.^(p-4) .* dx_stencil .* dx_stencil
+        bxy = rbf_xy.(stencil_coord)
+
+        # Compute all stencil at once
+        # RHS = [bx by bxx byy bxy b; cx[i, :] cy[i, :] cxx[i, :] cyy[i, :] cxy[i, :] c[i, :]]
+        RHS = [bx by bxx byy bxy b; cx[:] cy[:] cxx[:] cyy[:] cxy[:] c[:]]
+        stenc = M_inv * RHS
+
+        # Extract RBF Stencil Weights
+        Dx_loc[i, :] = stenc[1:n, 1]
+        Dy_loc[i, :] = stenc[1:n, 2]
+        Dxx_loc[i, :] = stenc[1:n, 3]
+        Dyy_loc[i, :] = stenc[1:n, 4]
+        Dxy_loc[i, :] = stenc[1:n, 5]
+        E_loc[i, :] = stenc[1:n, 6]
+    end
+
+    ### Generate Sparse Matrices from Local Operator Matrices
+    # From MATLAB Implementation
+    idx_rows = repeat((eachindex(X))', n)'
+    idx_columns = Array{eltype(idxs_x[1])}(undef, lastindex(X), n) # Change to eltype of existing indices
+    for i in eachindex(X)
+        idx_columns[i, :] = idxs_x[i]
+    end
+    ### Convert to Generate Sparse Matrix 
+    E = sparse(vec(idx_rows), vec(idx_columns), vec(E_loc))
+    Dx = sparse(vec(idx_rows), vec(idx_columns), vec(Dx_loc))
+    Dy = sparse(vec(idx_rows), vec(idx_columns), vec(Dy_loc))
+    Dxx = sparse(vec(idx_rows), vec(idx_columns), vec(Dxx_loc))
+    Dyy = sparse(vec(idx_rows), vec(idx_columns), vec(Dyy_loc))
+    Dxy = sparse(vec(idx_rows), vec(idx_columns), vec(Dxy_loc))
+    #spy(E)
+    #spy(Dx)
+    #spy(Dy)
+    #spy(Dxx)
+    #spy(Dyy)
+    #spy(Dxy)
+    return E, Dx, Dy, Dxx, Dyy, Dxy
+end
