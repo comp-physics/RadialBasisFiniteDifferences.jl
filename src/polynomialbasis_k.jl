@@ -8,7 +8,7 @@ function polynomialbasis_k(polydeg, k)
     P = monomials([x, y], 0:polydeg)
     f = Polynomial.(reverse(P)) # Convert to Static Polynomials after reversing order
     #f = Polynomial.(P) # Conv
-    #F = PolynomialSystem(f...) # Construct Monomial Syste
+    F = PolynomialSystem(f...) # Construct Monomial Syste
 
     # Differentiate Polynomial System 
     P_xk = deepcopy(P)
@@ -20,7 +20,10 @@ function polynomialbasis_k(polydeg, k)
 
     # Construct Fixed Polynomial Functions
     f_xk = Polynomial.(reverse(P_xk))
+    F_xk = PolynomialSystem(f_xk...)
     f_yk = Polynomial.(reverse(P_yk))
+    F_yk = PolynomialSystem(f_yk...)
 
-    return f, f_xk, f_yk
+    return F, F_xk, F_yk
+    # return f, f_xk, f_yk
 end

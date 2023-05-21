@@ -8,7 +8,7 @@ function polynomialblock(F, X)
     # Outputs:  P - Monomial Basis Block
 
     # Determine size for Polynomial Block
-    n = lastindex(F)
+    n = length(F)
     m = lastindex(X)
     # Determine size for Distance Block
     #X_shift = Array{SVector,1}(undef, m)
@@ -24,9 +24,9 @@ function polynomialblock(F, X)
 
     # Evaluate Polynomial System at Data Point
     for i in 1:m
-        #P[i, :] = StaticPolynomials.evaluate(F, X[i])
+        P[i, :] = StaticPolynomials.evaluate(F, X[i])
         # Switch to Fixed Polynomials
-        P[i, :] = FixedPolynomials.evaluate(F, X[i])
+        # P[i, :] = FixedPolynomials.evaluate(F, X[i])
     end
 
     return P

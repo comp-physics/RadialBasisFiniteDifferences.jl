@@ -7,7 +7,8 @@ import DynamicPolynomials: @polyvar
 import DynamicPolynomials: monomials
 import DynamicPolynomials: differentiate
 # using DynamicPolynomials: @polyvar, monomials, differentiate
-using FixedPolynomials
+# using FixedPolynomials
+using StaticPolynomials
 using LinearAlgebra
 using StaticArrays
 using HNSW

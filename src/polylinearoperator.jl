@@ -7,7 +7,7 @@ function polylinearoperator(X, F, F_x, F_y, F_xx, F_yy, F_xy)
     # Generate RHS Corresponding to Linear Operators on RBF System
 
     # Determine size for arrays
-    n_p = lastindex(F)
+    n_p = length(F)
     m = lastindex(X)
     r_F = Matrix{Float64}(undef, m, n_p)
     r_Fx = Matrix{Float64}(undef, m, n_p)
@@ -35,12 +35,12 @@ function polylinearoperator(X, F, F_x, F_y, F_xx, F_yy, F_xy)
     ### Generate Poly righthand side
     for i in 1:m
         # Evaluate with Fixed Polynomials
-        r_F[i, :] = FixedPolynomials.evaluate(F, X[i])
-        r_Fx[i, :] = FixedPolynomials.evaluate(F_x, X[i])
-        r_Fy[i, :] = FixedPolynomials.evaluate(F_y, X[i])
-        r_Fxx[i, :] = FixedPolynomials.evaluate(F_xx, X[i])
-        r_Fyy[i, :] = FixedPolynomials.evaluate(F_yy, X[i])
-        r_Fxy[i, :] = FixedPolynomials.evaluate(F_xy, X[i])
+        r_F[i, :] = StaticPolynomials.evaluate(F, X[i])
+        r_Fx[i, :] = StaticPolynomials.evaluate(F_x, X[i])
+        r_Fy[i, :] = StaticPolynomials.evaluate(F_y, X[i])
+        r_Fxx[i, :] = StaticPolynomials.evaluate(F_xx, X[i])
+        r_Fyy[i, :] = StaticPolynomials.evaluate(F_yy, X[i])
+        r_Fxy[i, :] = StaticPolynomials.evaluate(F_xy, X[i])
     end
 
     ### Concatinate RHSs 
@@ -54,7 +54,7 @@ function polylinearoperator(X, F_xk, F_yk)
     # Case for Hyperviscosity operator 
 
     # Determine size for arrays
-    n_p = lastindex(F_xk)
+    n_p = length(F_xk)
     m = lastindex(X)
     r_Fxk = Matrix{Float64}(undef, m, n_p)
     r_Fyk = Matrix{Float64}(undef, m, n_p)
@@ -62,8 +62,8 @@ function polylinearoperator(X, F_xk, F_yk)
     ### Generate Poly righthand side
     for i in 1:m
         # Evaluate with Fixed Polynomials
-        r_Fxk[i, :] = FixedPolynomials.evaluate(F_xk, X[i])
-        r_Fyk[i, :] = FixedPolynomials.evaluate(F_yk, X[i])
+        r_Fxk[i, :] = StaticPolynomials.evaluate(F_xk, X[i])
+        r_Fyk[i, :] = StaticPolynomials.evaluate(F_yk, X[i])
     end
 
     return r_Fxk, r_Fyk
