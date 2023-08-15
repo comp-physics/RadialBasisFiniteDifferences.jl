@@ -1,3 +1,31 @@
+"""
+    generate_operator(X, Y, p, n, polydeg)
+
+Generate global RBF-FD operator matrices. 
+
+# Arguments
+- `X::AbstractArray`: An array representing the interpolation data points.
+- `Y::AbstractArray`: An array representing the evaluation data points.
+- `p::Number`: Degree of the RBF for interpolation.
+- `n::Int`: Number of nearest neighbors to consider.
+- `polydeg::Number`: Degree of the polynomial for interpolation.
+
+# Returns
+- `E::SparseMatrixCSC`: The evaluation matrix.
+- `Dx::SparseMatrixCSC`: The derivative matrix w.r.t x.
+- `Dy::SparseMatrixCSC`: The derivative matrix w.r.t y.
+- `Dxx::SparseMatrixCSC`: The second derivative matrix w.r.t x.
+- `Dyy::SparseMatrixCSC`: The second derivative matrix w.r.t y.
+- `Dxy::SparseMatrixCSC`: The cross derivative matrix w.r.t x and y.
+
+# Description
+The function will determine the global RBF-FD operator matrices for given data points. If interpolation and evaluation points are the same, interpolation is collocated and operators will be square matrices  
+It achieves this by:
+- Generating RBF and polynomial basis.
+- Determine nearest neighbors using kD-tree.
+- Solving local interpolation systems for FD weights.
+- Forming the sparse matrices for the operators.
+"""
 function generate_operator(X, Y, p, n, polydeg)
     # Generate Global Operator Matrices
     # Can also generate multiple methods depending on the element type of X 

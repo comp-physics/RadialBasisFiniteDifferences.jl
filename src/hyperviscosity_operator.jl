@@ -1,3 +1,28 @@
+"""
+    hyperviscosity_operator(k_deriv, X, Y, p, n, polydeg)
+
+Generate global RBF-FD hyperviscosity operator matrix. 
+
+# Arguments
+- `k_deriv::Int`: Degree of hyperviscosity Laplacian.
+- `X::AbstractArray`: An array representing the interpolation data points.
+- `Y::AbstractArray`: An array representing the evaluation data points.
+- `p::Number`: Degree of the RBF for interpolation.
+- `n::Int`: Number of nearest neighbors to consider.
+- `polydeg::Number`: Degree of the polynomial for interpolation.
+
+# Returns
+- `Dxk::SparseMatrixCSC`: The k-Laplacian derivative matrix w.r.t x.
+- `Dyk::SparseMatrixCSC`: The k-Laplacian derivative matrix w.r.t y.
+
+# Description
+The function will determine the global RBF-FD operator matrices for given data points. If interpolation and evaluation points are the same, interpolation is collocated and operators will be square matrices  
+It achieves this by:
+- Generating RBF and polynomial basis.
+- Determine nearest neighbors using kD-tree.
+- Solving local interpolation systems for FD weights.
+- Forming the sparse matrices for the operators.
+"""
 function hyperviscosity_operator(k_deriv, X, Y, p, n, polydeg)
     # Generate Global Hyperviscosity Operator Matrix
     # of order k 
