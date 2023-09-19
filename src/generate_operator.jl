@@ -418,7 +418,7 @@ function generate_operator(X, p, n, polydeg)
         A = hvcat((2, 2), Φ, P_block, P_block', zeros(size(P_block)[2], size(P_block)[2]))
 
         M = A
-        # M_inv = inv(A)
+        M_inv = inv(A)
 
         # M_int[i, 1] = M
         # M_int[i, 2] = M_inv
@@ -455,8 +455,8 @@ function generate_operator(X, p, n, polydeg)
         # Compute all stencil at once
         # RHS = [bx by bxx byy bxy b; cx[i, :] cy[i, :] cxx[i, :] cyy[i, :] cxy[i, :] c[i, :]]
         RHS = [bx by bxx byy bxy b; cx[:] cy[:] cxx[:] cyy[:] cxy[:] c[:]]
-        # stenc = M_inv * RHS
-        stenc = M \ RHS
+        stenc = M_inv * RHS
+        # stenc = M \ RHS
 
         # Extract RBF Stencil Weights
         Dx_loc[i, :] = stenc[1:n, 1]
