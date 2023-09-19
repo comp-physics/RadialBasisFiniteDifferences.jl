@@ -39,22 +39,7 @@ function generate_operator(X, Y, p, n, polydeg)
     # Generate Polynomial Basis Functions
     F, F_x, F_y, F_xx, F_yy, F_xy = polynomialbasis(polydeg, 2)
 
-    # Generate KNN Tree Using HNSW 
-    #Intialize HNSW struct
-    # hnsw_x = HierarchicalNSW(X)
-    #Add all data points into the graph
-    #Optionally pass a subset of the indices in data to partially construct the graph
-    # add_to_graph!(hnsw_x)
-    # Find k (approximate) nearest neighbors for each of the queries
-    # idxs_x, dists_x = knn_search(hnsw_x, X, n)
-    #idxs_x = [convert.(Int, idxs_x[x]) for x in eachindex(idxs_x)] # Convert to readable
-    # Find single nearest neighbor for each Y point
-    # idxs_y_x, dists_y_x = knn_search(hnsw_x, Y, 1)
-    #idxs_y_x = [convert.(Int, idxs_y_x[x]) for x in eachindex(idxs_y_x)] # Convert to readable
-
     # Generate Knn Tree using NearestNeighbors
-    # Addressing a bug where HNSW fails to return point itself 
-    # when calculating neighbors.
     hnsw_x = KDTree(X)
     # Find k (approximate) nearest neighbors for each of the queries
     idxs_x, dists_x = knn(hnsw_x, X, n, true)
@@ -86,8 +71,8 @@ function generate_operator(X, Y, p, n, polydeg)
         #ad2 = [idxs_x[idxs_y_x[i]][1]][1][2]
         Y_shift[i] = [(Y[i][1] - X[idxs_x[idxs_y_x[i]][1][1]][1]) *
                       scale[idxs_x[idxs_y_x[i]][1][1]][1],
-                      (Y[i][2] - X[idxs_x[idxs_y_x[i]][1][1]][2]) *
-                      scale[idxs_x[idxs_y_x[i]][1][1]][2]]
+            (Y[i][2] - X[idxs_x[idxs_y_x[i]][1][1]][2]) *
+            scale[idxs_x[idxs_y_x[i]][1][1]][2]]
     end
 
     # Generate Poly RHS at every Y point 
@@ -205,7 +190,7 @@ function generate_operator(X, Y, p, n, polydeg)
 end
 
 function generate_operator(X, Y, p, n, polydeg, X_idx_in, X_idx_bc, X_idx_bc_g, Y_idx_in,
-                           Y_idx_bc, Y_idx_bc_g)
+    Y_idx_bc, Y_idx_bc_g)
     # Generate Global Operator Matrices
     # Special Treatment for each boundary node
 
@@ -219,9 +204,9 @@ function generate_operator(X, Y, p, n, polydeg, X_idx_in, X_idx_bc, X_idx_bc_g, 
 
     # Generate KNN Tree Using NearestNeighbors
     idxs_x, idxs_y_x, dists_x, dists_y_x = calculateneighbors(X, Y, n, X_idx_in, X_idx_bc,
-                                                              X_idx_bc_g, Y_idx_in,
-                                                              Y_idx_bc,
-                                                              Y_idx_bc_g)
+        X_idx_bc_g, Y_idx_in,
+        Y_idx_bc,
+        Y_idx_bc_g)
 
     ### Storing matrices and scale factors
     m = lastindex(X)
@@ -248,8 +233,8 @@ function generate_operator(X, Y, p, n, polydeg, X_idx_in, X_idx_bc, X_idx_bc_g, 
         #ad2 = [idxs_x[idxs_y_x[i]][1]][1][2]
         Y_shift[i] = [(Y[i][1] - X[idxs_x[idxs_y_x[i]][1][1]][1]) *
                       scale[idxs_x[idxs_y_x[i]][1][1]][1],
-                      (Y[i][2] - X[idxs_x[idxs_y_x[i]][1][1]][2]) *
-                      scale[idxs_x[idxs_y_x[i]][1][1]][2]]
+            (Y[i][2] - X[idxs_x[idxs_y_x[i]][1][1]][2]) *
+            scale[idxs_x[idxs_y_x[i]][1][1]][2]]
     end
 
     # Generate Poly RHS at every Y point 
@@ -379,30 +364,16 @@ function generate_operator(X, p, n, polydeg)
     # Generate Polynomial Basis Functions
     F, F_x, F_y, F_xx, F_yy, F_xy = polynomialbasis(polydeg, 2)
 
-    # Generate KNN Tree Using HNSW 
-    #Intialize HNSW struct
-    # hnsw_x = HierarchicalNSW(X)
-    #Add all data points into the graph
-    #Optionally pass a subset of the indices in data to partially construct the graph
-    # add_to_graph!(hnsw_x)
-    # Find k (approximate) nearest neighbors for each of the queries
-    # idxs_x, dists_x = knn_search(hnsw_x, X, n)
-    #idxs_x = [convert.(Int, idxs_x[x]) for x in eachindex(idxs_x)] # Convert to readable
-    # Find single nearest neighbor for each Y point
-    # idxs_y_x, dists_y_x = knn_search(hnsw_x, Y, 1)
-    #idxs_y_x = [convert.(Int, idxs_y_x[x]) for x in eachindex(idxs_y_x)] # Convert to readable
-
     # Generate Knn Tree using NearestNeighbors
-    # Addressing a bug where HNSW fails to return point itself 
-    # when calculating neighbors.
     hnsw_x = KDTree(X)
     # Find k (approximate) nearest neighbors for each of the queries
     idxs_x, dists_x = knn(hnsw_x, X, n, true)
 
     ### Storing matrices and scale factors
     m = lastindex(X)
-    M_int = Array{Matrix,2}(undef, (m, 2))
+    # M_int = Array{Matrix,2}(undef, (m, 2))
     scale = Array{SVector{2},1}(undef, m)
+    stenc = zeros(Float64, length(F) + n, 6)
 
     ### Testing looping through all indeces of X 
     ### Need to perform several shifts in order to get the correct values for PHS
@@ -447,16 +418,16 @@ function generate_operator(X, p, n, polydeg)
         A = hvcat((2, 2), Φ, P_block, P_block', zeros(size(P_block)[2], size(P_block)[2]))
 
         M = A
-        M_inv = inv(A)
+        # M_inv = inv(A)
 
-        M_int[i, 1] = M
-        M_int[i, 2] = M_inv
+        # M_int[i, 1] = M
+        # M_int[i, 2] = M_inv
 
         # Generate Poly RHS at every Y point 
         # c, cx, cy, cxx, cyy, cxy = polylinearoperator(X_shift, F, F_x, F_y, F_xx, F_yy, F_xy)
         # Change to calculate per each stencil
         c, cx, cy, cxx, cyy, cxy = polylinearoperator([X_shift[1]], F, F_x, F_y, F_xx, F_yy,
-                                                      F_xy)
+            F_xy)
 
         # Stencil distance matrices. Center point is in the origin (0)
         stencil_coord = X_shift
@@ -484,7 +455,8 @@ function generate_operator(X, p, n, polydeg)
         # Compute all stencil at once
         # RHS = [bx by bxx byy bxy b; cx[i, :] cy[i, :] cxx[i, :] cyy[i, :] cxy[i, :] c[i, :]]
         RHS = [bx by bxx byy bxy b; cx[:] cy[:] cxx[:] cyy[:] cxy[:] c[:]]
-        stenc = M_inv * RHS
+        # stenc = M_inv * RHS
+        stenc = M \ RHS
 
         # Extract RBF Stencil Weights
         Dx_loc[i, :] = stenc[1:n, 1]
